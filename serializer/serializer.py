@@ -104,7 +104,6 @@ class Serializable:
     used to instantiate a new object with MyObject(**dict).
     """
 
-    # TODO: add __delattr__
     def __init__(self, *args, **kwargs):  # pylint: disable=too-many-branches
         fields = annotate(self)
 
@@ -155,6 +154,14 @@ class Serializable:
             err.args = (error,)
             raise
         self.__dict__[field.name] = normalized
+
+    def __delattr__(self, name):
+        fields = annotate(self)
+        if not (field := fields.get(name)):
+            raise UndefinedAttributeError(self, name)
+        if field.is_readonly:
+            raise ReadOnlyFieldError(name)
+        del self.__dict__[name]
 
     def __repr__(self):
         """bad idea for sensitive data, but handy nonetheless"""

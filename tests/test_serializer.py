@@ -96,3 +96,22 @@ class BooleanFalseDefault(Serializable):  # pylint: disable=too-few-public-metho
 def test_false_default():
     instance = BooleanFalseDefault()
     assert hasattr(instance, "attr_a")
+
+
+def test_delete():
+    instance = BasicPrimitive(attr_c=True)
+    assert hasattr(instance, "attr_c")
+    del instance.attr_c
+    assert not hasattr(instance, "attr_c")
+
+
+def test_delete_undefined():
+    instance = BasicReadOnly(10)
+    with pytest.raises(UndefinedAttributeError):
+        del instance.foo
+
+
+def test_delete_read_only():
+    instance = BasicReadOnly(10)
+    with pytest.raises(ReadOnlyFieldError):
+        del instance.attr_a
