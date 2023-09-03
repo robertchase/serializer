@@ -32,6 +32,8 @@ class SerializerType:
 class Integer(SerializerType):
     """int type (automatically assigned to int annotations)"""
 
+    __name__ = "int"
+
     def __call__(self, value):
         if isinstance(value, int):
             return value
@@ -43,10 +45,12 @@ class Integer(SerializerType):
 class Float(SerializerType):
     """float type (automatically assigned to float annotations)"""
 
+    __name__ = "float"
+
     def __call__(self, value):
         if isinstance(value, (int, float)):
             return float(value)
-        if re.match(r"(\d+|\.\d+|\d+.\d*)$", value):
+        if not re.match(r"(\d+|\.\d+|\d+.\d*)$", value):
             raise ValueError("not a float")
         return float(value)
 
@@ -62,6 +66,8 @@ class String(SerializerType):
 
 class Boolean(SerializerType):
     """bool type (automatically assigned to bool annotations)"""
+
+    __name__ = "bool"
 
     def __call__(self, value):
         if isinstance(value, str) and value.lower() == "true":

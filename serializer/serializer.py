@@ -1,4 +1,4 @@
-"""Constrained and serializable alternative to dataclass
+"""Constrained and serializable alternative to a dataclass
 
 Use dataclass-like class-level field definitions to create an object which
 enforces the typing of values based on field annotations. Available fields
@@ -12,6 +12,9 @@ from serializer import types
 
 class Optional:  # pylint: disable=too-few-public-methods
     """Special default signifier for "optional" fields.
+
+    Usage:
+        age: int = Optional
 
     There is no "optional" indicator in python. A field without a default is
     "required", and a field with a default is optional (doesn't need to be
@@ -27,6 +30,10 @@ class Optional:  # pylint: disable=too-few-public-methods
 class ReadOnly:  # pylint: disable=too-few-public-methods
     """Special default signifier for "read only" fields.
 
+    Usage:
+        age: int = ReadOnly
+        from_another_planet: bool = ReadOnly(False)
+
     Read-only fields can be set at init, but are not allowed to be changed
     after init.
 
@@ -39,6 +46,42 @@ class ReadOnly:  # pylint: disable=too-few-public-methods
 
 class OptionalReadOnly:  # pylint: disable=too-few-public-methods
     """Special default signifier that combines "optional" and "read only"."""
+
+
+class ExtraAttributeError(AttributeError):
+    """indicate too many attributes specified on init"""
+
+    def __init__(self, names):
+        self.args = (f"extra attribute(s): {', '.join(str(name) for name in names)}",)
+
+
+class DuplicateAttributeError(AttributeError):
+    """indicate attribute defined in both args and kwargs"""
+
+    def __init__(self, name):
+        self.args = (f"duplicate attribute: {name}",)
+
+
+class UndefinedAttributeError(AttributeError):
+    """indicate use of undefined attribute"""
+
+    def __init__(self, instance, name):
+        class_ = instance.__class__.__name__
+        self.args = (f"'{class_}' object has no attribute '{name}'",)
+
+
+class RequiredAttributeError(AttributeError):
+    """indicate missing required attribute"""
+
+    def __init__(self, name):
+        self.args = (f"missing required attribute: {name}",)
+
+
+class ReadOnlyFieldError(ValueError):
+    """indicate illegal use of read-only field"""
+
+    def __init__(self, name):
+        self.args = (f"field '{name}' is read-only",)
 
 
 class Serializable:
@@ -62,30 +105,26 @@ class Serializable:
     """
 
     # TODO: add __delattr__
-    # TODO: add AttributeError subclasses
-
     def __init__(self, *args, **kwargs):  # pylint: disable=too-many-branches
         fields = annotate(self)
 
         if len(args) > len(fields):
-            raise AttributeError(f"extra attribute error {args[len(fields):]}")
+            raise ExtraAttributeError(args[len(fields) :])
 
         for value, field in zip(args, fields.values()):
             if field.name in kwargs:
-                raise AttributeError(f"duplicate attribute error {field.name}")
+                raise DuplicateAttributeError(field.name)
             kwargs[field.name] = value  # convert args to kwargs
 
         for name in kwargs:
             if name not in fields:
-                raise AttributeError(f"undefined field name '{name}'")
+                raise UndefinedAttributeError(self, name)
 
         for field in fields.values():
             if field.is_required:
                 if not field.has_default:
                     if field.name not in kwargs:
-                        raise AttributeError(
-                            f"missing required attribute '{field.name}'"
-                        )
+                        raise RequiredAttributeError(field.name)
             if field.has_default:
                 if field.name not in kwargs:
                     kwargs[field.name] = field.default
@@ -98,9 +137,9 @@ class Serializable:
         fields = annotate(self)
 
         if not (field := fields.get(name)):
-            raise AttributeError(f"invalid field '{name}'")
+            raise UndefinedAttributeError(self, name)
         if field.is_readonly:
-            raise AttributeError(f"field '{name}' is read-only")
+            raise ReadOnlyFieldError(name)
 
         self._setattr(field, value)
 
@@ -108,9 +147,13 @@ class Serializable:
         try:
             normalized = field.type(value)
         except ValueError as err:
-            raise AttributeError(
-                f"assignment {field.name}={value} failed: {str(err)}"
-            ) from None
+            type_name = getattr(field.type, "__name__", field.type.__class__.__name__)
+            error = (
+                f"invalid <{type_name}> value ({value}) for field '{field.name}'"
+                f": {str(err)}"
+            )
+            err.args = (error,)
+            raise
         self.__dict__[field.name] = normalized
 
     def __repr__(self):
