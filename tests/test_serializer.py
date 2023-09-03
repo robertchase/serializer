@@ -87,3 +87,12 @@ def test_invalid_bool_value():
     with pytest.raises(ValueError) as err:
         BasicPrimitive(attr_c="hello")
     assert err.value.args[0] == expect
+
+
+class BooleanFalseDefault(Serializable):  # pylint: disable=too-few-public-methods
+    attr_a: bool = False
+
+
+def test_false_default():
+    instance = BooleanFalseDefault()
+    assert hasattr(instance, "attr_a")

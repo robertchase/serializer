@@ -238,7 +238,9 @@ def annotate(item):
 
         # adjust field characteristics based on specified default values
         # default values are stored as class attributes
-        if setting := getattr(class_, nam, None):
+        if hasattr(class_, nam):
+            setting = getattr(class_, nam)
+
             if setting == ReadOnly:  # class
                 is_readonly = True
                 is_required = True
