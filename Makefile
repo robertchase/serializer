@@ -20,7 +20,7 @@ black:
 	$(BIN)/black $(NAME) tests
 
 .PHONY: bin
-pythonpath:
+bin:
 	@echo $(BIN)
 
 .PHONY: venv

@@ -84,7 +84,7 @@ class ReadOnlyFieldError(ValueError):
         self.args = (f"field '{name}' is read-only",)
 
 
-class Serializable:
+class Serializable(types.Serializable):
     """Python object <-> dict mapper.
 
     Use dataclass-like class attribute definitions, for instance:

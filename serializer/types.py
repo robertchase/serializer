@@ -5,9 +5,13 @@ import re
 
 def get_type(type_):
     """map a type to a subclass of SerializerType"""
+    if isinstance(type, List):
+        return type_
     if isinstance(type_, type) and issubclass(type_, SerializerType):
         return type_()
     if isinstance(type_, SerializerType):
+        return type_
+    if isinstance(type_, type) and issubclass(type_, Serializable):
         return type_
 
     return {
@@ -16,6 +20,19 @@ def get_type(type_):
         str: String,
         bool: Boolean,
     }.get(type_, SerializerType)()
+
+
+class Serializable:  # pylint: disable=too-few-public-methods
+    """used to prevent a circular reference to serializer.Serializable
+
+    Notice that serializer.Serializer is a subclass of this "interface", so
+    that "get_type" can reference this class without knowing about the
+    "serializer.py" module.
+    """
+
+
+class List:  # pylint: disable=too-few-public-methods
+    """same as above"""
 
 
 class SerializerType:
