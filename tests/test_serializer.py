@@ -108,7 +108,7 @@ def test_delete():
 def test_delete_undefined():
     instance = BasicReadOnly(10)
     with pytest.raises(UndefinedAttributeError):
-        del instance.foo
+        del instance.foo  # pylint: disable=no-member
 
 
 def test_delete_read_only():

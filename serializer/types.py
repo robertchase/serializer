@@ -35,9 +35,7 @@ class Integer(SerializerType):
     __name__ = "int"
 
     def __call__(self, value):
-        if isinstance(value, int):
-            return value
-        if not re.match(r"\d+", value):
+        if not re.match(r"\d+$", str(value)):
             raise ValueError("not an integer")
         return int(value)
 
@@ -58,10 +56,31 @@ class Float(SerializerType):
 class String(SerializerType):
     """str type (automatically assigned to str annotations)"""
 
-    # TODO: add min and max length
+    def __init__(self, min_length=0, max_length=None):
+        self.min_length = int(min_length)
+        if self.min_length < 0:
+            raise AttributeError("min_length must be greater than or equal to zero")
+        if max_length is not None:
+            max_length = int(max_length)
+            if max_length < min_length:
+                raise AttributeError(
+                    f"max_length must be greater than {self.min_length}"
+                )
+        self.max_length = max_length
 
     def __call__(self, value):
-        return str(value)
+        value = str(value)
+        if self.min_length:
+            if len(value) < self.min_length:
+                raise ValueError(
+                    f"is shorter than the minimum length ({self.min_length})"
+                )
+        if self.max_length is not None:
+            if len(value) > self.max_length:
+                raise ValueError(
+                    f"is longer than the maximum length ({self.max_length})"
+                )
+        return value
 
 
 class Boolean(SerializerType):
@@ -72,11 +91,11 @@ class Boolean(SerializerType):
     def __call__(self, value):
         if isinstance(value, str) and value.lower() == "true":
             return True
-        if value in (1, "1"):
+        if value in (1, "1", True):
             return True
         if isinstance(value, str) and value.lower() == "false":
             return False
-        if value in (0, "0"):
+        if value in (0, "0", False):
             return False
         raise ValueError("not a boolean")
 
