@@ -19,6 +19,13 @@ lint:
 black:
 	$(BIN)/black $(NAME) tests
 
+.PHONY: bump
+bump:
+	$(eval TMP := $(shell mktemp tmp.setup.XXXXXX))
+	@awk '$$1=="version"{split($$3,n,".");$$0=sprintf("version = %d.%d.%d",n[1],n[2],n[3]+1)}{print}' setup.cfg > $(TMP)
+	@mv $(TMP) setup.cfg
+	@grep version setup.cfg
+
 .PHONY: bin
 bin:
 	@echo $(BIN)
