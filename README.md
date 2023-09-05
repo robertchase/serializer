@@ -11,9 +11,9 @@ a python serializer
 
 The `serializer` package adds serialization, type-enforcement, and other features to a python class.
 
-By borrowing some of the syntax from the [dataclass](https://docs.python.org/3/library/dataclasses.html) package, `serializer` is able to leverage standard python, but with more nuanced control than that provided by a dataclass.
+By borrowing some of the syntax used by the [dataclasses](https://docs.python.org/3/library/dataclasses.html) package, `serializer` is able to leverage standard python, but with more nuanced control than that provided by a dataclass.
 
-The dataclass package uses a decorator to automatically add methods to a class based on that class's fields and their annotations. By contrast, the `serializer` package is inherited and brings it's own *dunder* functions that provide features like: type-enforcement, attribute constraint, user-defined types, nested objects, read-only fields, optional fields with no default values, and *serialization*.
+A `dataclass` is a decorator that magically adds methods to a class based on that class's fields and their annotations. By contrast, the `serializer` package provides a `Serializable` superclass that brings it's own *dunder* functions that provide features like: type-enforcement, attribute constraint, user-defined types, nested objects, read-only fields, optional fields with no default values, and *serialization*.
 
 ## example
 
