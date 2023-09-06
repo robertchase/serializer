@@ -145,15 +145,7 @@ class Serializable(types.Serializable):
     def _setattr(self, field, value):
         try:
             normalized = field.type(value)
-        except ValueError as err:
-            type_name = getattr(field.type, "__name__", field.type.__class__.__name__)
-            error = (
-                f"invalid <{type_name}> value ({value}) for field '{field.name}'"
-                f": {str(err)}"
-            )
-            err.args = (error,)
-            raise
-        except AttributeError as err:
+        except (AttributeError, ValueError) as err:
             type_name = getattr(field.type, "__name__", field.type.__class__.__name__)
             error = (
                 f"invalid <{type_name}> value ({value}) for field '{field.name}'"
