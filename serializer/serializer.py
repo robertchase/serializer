@@ -153,6 +153,14 @@ class Serializable(types.Serializable):
             )
             err.args = (error,)
             raise
+        except AttributeError as err:
+            type_name = getattr(field.type, "__name__", field.type.__class__.__name__)
+            error = (
+                f"invalid <{type_name}> value ({value}) for field '{field.name}'"
+                f": {str(err)}"
+            )
+            err.args = (error,)
+            raise
         self.__dict__[field.name] = normalized
 
     def __delattr__(self, name):
@@ -188,6 +196,7 @@ class Nested:
 
     def __init__(self, type_):
         self.type_ = type_
+        self.__name__ = getattr(type_, "__name__", type_.__class__.__name__)
 
     def __call__(self, *args, **kwargs):
         # special case handling of single argument calls
