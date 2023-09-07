@@ -5,7 +5,7 @@ import re
 
 def get_type(type_):
     """map a type to a subclass of SerializerType"""
-    if isinstance(type, List):
+    if isinstance(type_, List):
         return type_
     if isinstance(type_, type) and issubclass(type_, SerializerType):
         return type_()

@@ -52,7 +52,10 @@ class _List:
         self.allow_dups = parent.allow_dups
 
         if isinstance(value, str):
-            value = json.loads(value)
+            try:
+                value = json.loads(value)
+            except json.JSONDecodeError:
+                pass
         if not isinstance(value, list):
             raise AttributeError("expecting a list")
         if self.min > 0:
@@ -63,8 +66,13 @@ class _List:
                 raise ListTooLongError(self.max)
 
         self.store = []
-        for item in value:
-            self.append(item)
+        for position, item in enumerate(value, start=1):
+            try:
+                self.append(item)
+            except (AttributeError, ValueError) as err:
+                msg = f"{position=}, {item=}: {err.args[0]}"
+                err.args = (msg,)
+                raise
 
     def __repr__(self):
         return f"List{self.serialize()}"
@@ -104,8 +112,7 @@ class _List:
         if self.max > 0:
             if len(self.store) == self.max:
                 raise ListTooLongError(self.max)
-        if not isinstance(value, self.type):
-            value = self.type(value)
+        value = self.type(value)
         if not self.allow_dups and value in self.store:
             raise ListDuplicateItemError(value)
         self.store.append(value)
