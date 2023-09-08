@@ -183,35 +183,6 @@ class Serializable(types.Serializable):
         }
 
 
-class Nested:
-    """enable nested Serializable objects"""
-
-    def __init__(self, type_):
-        self.type_ = type_
-        self.__name__ = getattr(type_, "__name__", type_.__class__.__name__)
-
-    def __call__(self, *args, **kwargs):
-        # special case handling of single argument calls
-        if not kwargs and len(args) == 1:
-            arg0 = args[0]
-
-            if isinstance(arg0, self.type_):  # already the right shape
-                return arg0
-
-            if isinstance(arg0, dict):  # treat dict as **kwargs
-                kwargs = arg0
-                args = []
-
-            elif isinstance(arg0, list):  # treat list as *args
-                args = arg0
-
-        return self.type_(*args, **kwargs)
-
-    def serialize(self, instance):
-        """defer to type_'s serialize"""
-        return self.type_.serialize(instance)
-
-
 AnnotationField = namedtuple(
     "AnnotationField", "name, type, is_required, is_readonly, has_default, default"
 )
@@ -231,12 +202,7 @@ def annotate(item):
 
     for nam, typ in inspect.get_annotations(class_).items():
         # normalize type
-        if isinstance(typ, type) and issubclass(typ, Serializable):
-            type_ = Nested(typ)
-        elif isinstance(typ, Serializable):
-            type_ = Nested(typ)
-        else:
-            type_ = types.get_type(typ)
+        type_ = types.get_type(typ)
 
         # basic field characteristics
         is_required = False

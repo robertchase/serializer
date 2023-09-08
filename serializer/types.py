@@ -7,11 +7,13 @@ def get_type(type_):
     """map a type to a subclass of SerializerType"""
     if isinstance(type_, List):
         return type_
+    if isinstance(type_, type) and issubclass(type_, Serializable):
+        return Nested(type_)
+    if isinstance(type_, Serializable):
+        return Nested(type_)
     if isinstance(type_, type) and issubclass(type_, SerializerType):
         return type_()
     if isinstance(type_, SerializerType):
-        return type_
-    if isinstance(type_, type) and issubclass(type_, Serializable):
         return type_
 
     return {
@@ -20,6 +22,35 @@ def get_type(type_):
         str: String,
         bool: Boolean,
     }.get(type_, SerializerType)()
+
+
+class Nested:
+    """enable nested Serializable objects"""
+
+    def __init__(self, type_):
+        self.type_ = type_
+        self.__name__ = getattr(type_, "__name__", type_.__class__.__name__)
+
+    def __call__(self, *args, **kwargs):
+        # special case handling of single argument calls
+        if not kwargs and len(args) == 1:
+            arg0 = args[0]
+
+            if isinstance(arg0, self.type_):  # already the right shape
+                return arg0
+
+            if isinstance(arg0, dict):  # treat dict as **kwargs
+                kwargs = arg0
+                args = []
+
+            elif isinstance(arg0, list):  # treat list as *args
+                args = arg0
+
+        return self.type_(*args, **kwargs)
+
+    def serialize(self, instance):
+        """defer to type_'s serialize"""
+        return self.type_.serialize(instance)
 
 
 class Serializable:  # pylint: disable=too-few-public-methods
