@@ -83,7 +83,7 @@ class Integer(SerializerType):
     __name__ = "int"
 
     def __call__(self, value):
-        if not re.match(r"\d+$", str(value)):
+        if not re.match(r"[-+]?\d+$", str(value)):
             raise ValueError("not an integer")
         return int(value)
 
@@ -94,9 +94,7 @@ class Float(SerializerType):
     __name__ = "float"
 
     def __call__(self, value):
-        if isinstance(value, (int, float)):
-            return float(value)
-        if not re.match(r"(\d+|\.\d+|\d+.\d*)$", value):
+        if not re.match(r"[-+]?(\d+|\.\d+|\d+.\d*)$", str(value)):
             raise ValueError("not a float")
         return float(value)
 

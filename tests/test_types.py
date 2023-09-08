@@ -14,6 +14,9 @@ from serializer import types
         ("1a", False, None),
         (None, False, None),
         ("abc", False, None),
+        ("-1", True, -1),
+        ("+1", True, 1),
+        ("++1", False, None),
     ),
 )
 def test_integer(value, is_valid, result):
@@ -25,7 +28,32 @@ def test_integer(value, is_valid, result):
             types.Integer()(value)
 
 
-# TODO: Float
+@pytest.mark.parametrize(
+    "value, is_valid, result",
+    (
+        (1, True, 1),
+        ("1", True, 1),
+        (0, True, 0),
+        (True, False, None),
+        ("1a", False, None),
+        (None, False, None),
+        ("abc", False, None),
+        ("-1", True, -1),
+        ("+1", True, 1),
+        ("++1", False, None),
+        (".123", True, 0.123),
+        ("0.123", True, 0.123),
+        ("123.", True, 123.0),
+        ("-123.456", True, -123.456),
+    ),
+)
+def test_float(value, is_valid, result):
+    """test float operation"""
+    if is_valid:
+        assert types.Float()(value) == result
+    else:
+        with pytest.raises(ValueError):
+            types.Float()(value)
 
 
 def test_string_ctor():
