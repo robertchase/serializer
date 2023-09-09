@@ -29,6 +29,29 @@ def test_integer(value, is_valid, result):
 
 
 @pytest.mark.parametrize(
+    "value, minimum, maximum, is_valid",
+    (
+        (10, 5, 15, True),
+        (10, 15, 15, False),
+        (10, -15, 15, True),
+        (0, -15, 15, True),
+        (-1, -15, 15, True),
+        (-16, -15, 15, False),
+        (-10, -15, -5, True),
+        (-4, -15, -5, False),
+    ),
+)
+def test_min_max_integer(value, minimum, maximum, is_valid):
+    """test integer operation with min/max"""
+    type_ = types.Integer(minimum=minimum, maximum=maximum)
+    if is_valid:
+        assert type_(value) == value
+    else:
+        with pytest.raises(ValueError):
+            type_(value)
+
+
+@pytest.mark.parametrize(
     "value, is_valid, result",
     (
         (1, True, 1),
@@ -54,6 +77,59 @@ def test_float(value, is_valid, result):
     else:
         with pytest.raises(ValueError):
             types.Float()(value)
+
+
+@pytest.mark.parametrize(
+    "value, minimum, maximum, is_valid",
+    (
+        (10, 5, 15, True),
+        (10, 15, 15, False),
+        (15.1, 15, 15, False),
+        (14.9999999999, 15, 15, False),
+        (10, -15, 15, True),
+        (0, -15, 15, True),
+        (-1, -15, 15, True),
+        (-16, -15, 15, False),
+        (-15.0000000001, -15, 15, False),
+        (-10, -15, -5, True),
+        (-4, -15, -5, False),
+        (-4.9999999999, -15, -5, False),
+    ),
+)
+def test_min_max_float(value, minimum, maximum, is_valid):
+    """test integer operation with min/max"""
+    type_ = types.Float(minimum=minimum, maximum=maximum)
+    if is_valid:
+        assert type_(value) == value
+    else:
+        with pytest.raises(ValueError):
+            type_(value)
+
+
+@pytest.mark.parametrize(
+    "value, minimum, maximum, is_valid",
+    (
+        (15, 15, 15, False),
+        (14, 14, 16, False),
+        (16, 14, 16, False),
+        (15, 14, 16, True),
+        (-15, -15, 15, False),
+        (-14.9999999999, -15.0, 15, True),
+        (0, -15.0, 15, True),
+        (0, 0, 15, False),
+        (0, -10, 0, False),
+    ),
+)
+def test_exclusive_min_max_float(value, minimum, maximum, is_valid):
+    """test integer operation with min/max exclusive"""
+    type_ = types.Float(
+        minimum=minimum, maximum=maximum, exclusive_min=True, exclusive_max=True
+    )
+    if is_valid:
+        assert type_(value) == value
+    else:
+        with pytest.raises(ValueError):
+            type_(value)
 
 
 def test_string_ctor():

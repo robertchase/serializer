@@ -80,23 +80,75 @@ class SerializerType:
 class Integer(SerializerType):
     """int type (automatically assigned to int annotations)"""
 
-    __name__ = "int"
+    def __init__(self, minimum=None, maximum=None, name=None):
+        self.min = int(minimum) if minimum is not None else None
+        self.max = int(maximum) if maximum is not None else None
+
+        if minimum is None and maximum is None:
+            self.__name__ = "int"
+
+        if name:
+            self.__name__ = name
 
     def __call__(self, value):
         if not re.match(r"[-+]?\d+$", str(value)):
             raise ValueError("not an integer")
-        return int(value)
+        value = int(value)
+        if self.min is not None:
+            if value < self.min:
+                raise ValueError(f"not >= {self.min}")
+        if self.max is not None:
+            if value > self.max:
+                raise ValueError(f"not <= {self.max}")
+        return value
 
 
 class Float(SerializerType):
     """float type (automatically assigned to float annotations)"""
 
-    __name__ = "float"
+    def __init__(  # pylint: disable=too-many-arguments
+        self,
+        minimum=None,
+        maximum=None,
+        exclusive_min=False,
+        exclusive_max=False,
+        name=None,
+    ):
+        self.min = float(minimum) if minimum is not None else None
+        self.max = float(maximum) if maximum is not None else None
+        self.exclusive_min = exclusive_min
+        self.exclusive_max = exclusive_max
+
+        if (
+            minimum is None
+            and maximum is None
+            and not exclusive_min
+            and not exclusive_max
+        ):
+            self.__name__ = "float"
+
+        if name:
+            self.__name__ = name
 
     def __call__(self, value):
         if not re.match(r"[-+]?(\d+|\.\d+|\d+.\d*)$", str(value)):
             raise ValueError("not a float")
-        return float(value)
+        value = float(value)
+        if self.min is not None:
+            if self.exclusive_min:
+                if value <= self.min:
+                    raise ValueError(f"not > {self.min}")
+            else:
+                if value < self.min:
+                    raise ValueError(f"not >= {self.min}")
+        if self.max is not None:
+            if self.exclusive_max:
+                if value >= self.max:
+                    raise ValueError(f"not < {self.max}")
+            else:
+                if value > self.max:
+                    raise ValueError(f"not <= {self.max}")
+        return value
 
 
 class String(SerializerType):
