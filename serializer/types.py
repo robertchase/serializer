@@ -243,8 +243,11 @@ class ISOTime(ISODateTime):
 class OneOf(SerializerType):
     """allow one item from *args"""
 
-    def __init__(self, *args):
+    def __init__(self, *args, name=None):
         self.valid = set(args)
+
+        if name:
+            self.__name__ = name
 
     def __call__(self, value):
         if value not in self.valid:
@@ -255,8 +258,11 @@ class OneOf(SerializerType):
 class SomeOf(SerializerType):
     """allow an array of items that are a subset of *args"""
 
-    def __init__(self, *args):
+    def __init__(self, *args, name=None):
         self.choices = set(args)
+
+        if name:
+            self.__name__ = name
 
     def __call__(self, value):
         value = set(value)
