@@ -105,7 +105,7 @@ class Serializable(types.Serializable):
     """
 
     def __init__(self, *args, **kwargs):  # pylint: disable=too-many-branches
-        fields = annotate(self)
+        fields = get_fields(self)
 
         if len(args) > len(fields):
             raise ExtraAttributeError(args[len(fields) :])
@@ -133,7 +133,7 @@ class Serializable(types.Serializable):
                 self._setattr(field, kwargs[field.name])
 
     def __setattr__(self, name, value):
-        fields = annotate(self)
+        fields = get_fields(self)
 
         if not (field := fields.get(name)):
             raise UndefinedAttributeError(self, name)
@@ -156,7 +156,7 @@ class Serializable(types.Serializable):
         self.__dict__[field.name] = normalized
 
     def __delattr__(self, name):
-        fields = annotate(self)
+        fields = get_fields(self)
         if not (field := fields.get(name)):
             raise UndefinedAttributeError(self, name)
         if field.is_readonly:
@@ -176,7 +176,7 @@ def serialize(item: Serializable):
     from any of the object hierachy's members' serialize methods, then
     special json.dumps handling may be necessary.
     """
-    fields = annotate(item)
+    fields = get_fields(item)
     return {
         field.name: field.type.serialize(getattr(item, field.name))
         for field in fields.values()
@@ -189,7 +189,7 @@ AnnotationField = namedtuple(
 )
 
 
-def annotate(item):
+def get_fields(item):
     """derive list of fields from class annotations
 
     Run once, caching results in class.
