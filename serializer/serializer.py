@@ -167,20 +167,21 @@ class Serializable(types.Serializable):
         """bad idea for sensitive data, but handy nonetheless"""
         return f"{self.__class__.__name__}: {self.__dict__}"
 
-    def serialize(self):
-        """Turn instance into dict
 
-        Note that this is really an "as_dict" implementation whose result
-        should json.dumps without issue. If non-primitive types are returned
-        from any of the object hierachy's members' serialize methods, then
-        special json.dumps handling may be necessary.
-        """
-        fields = annotate(self)
-        return {
-            field.name: field.type.serialize(getattr(self, field.name))
-            for field in fields.values()
-            if hasattr(self, field.name)
-        }
+def serialize(item: Serializable):
+    """Turn item into dict
+
+    Note that this is really an "as_dict" implementation whose result
+    should json.dumps without issue. If non-primitive types are returned
+    from any of the object hierachy's members' serialize methods, then
+    special json.dumps handling may be necessary.
+    """
+    fields = annotate(item)
+    return {
+        field.name: field.type.serialize(getattr(item, field.name))
+        for field in fields.values()
+        if hasattr(item, field.name)
+    }
 
 
 AnnotationField = namedtuple(

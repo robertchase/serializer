@@ -18,6 +18,8 @@ A `dataclass` is a decorator that magically adds methods to a class based on tha
 ## example
 
 ```
+from serializer import Serializable, Optional, serialize
+
 class Apartment(Serializable):
     floor: int
     unit: str
@@ -44,7 +46,7 @@ apt = Apartment("3", unit="A", is_studio=False)
 The instance can be serialized to a dict:
 
 ```
->> apt.serialize()
+>> serialize(apt)
 {'floor': 3, 'unit': 'A', is_studio: False}
 ```
 
@@ -53,7 +55,7 @@ The instance fields operate as expected:
 ```
 >> apt.balcony = True
 >> apt.is_studio = True
->> apt.serialize()
+>> serialize(apt)
 {'floor': 3, 'unit': 'A', 'is_studio': True, 'balcony': True}
 
 >> apt.bathrooms = 1
@@ -80,14 +82,14 @@ tenant = Person("John Doe", apt)
 Serialize the tenant:
 
 ```
-tenant.serialize()
+serialize(tenant)
 {'name': 'John Doe', 'address': {'floor': 3, 'unit': 'A', 'is_studio': False}}
 ```
 
 The serialized version of an object can be used to create a new object&mdash;a method which even works with nested objects:
 
 ```
-ser = tenant.serialize()
+ser = serialize(tenant)
 tenant = Person(**ser)
 ```
 
