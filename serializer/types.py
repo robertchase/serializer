@@ -3,81 +3,19 @@ from datetime import date, datetime, time
 import re
 
 
-def get_type(type_):
-    """map a type to a subclass of SerializerType"""
-    if isinstance(type_, List):
-        return type_
-    if isinstance(type_, type) and issubclass(type_, Serializable):
-        return Nested(type_)
-    if isinstance(type_, Serializable):
-        return Nested(type_)
-    if isinstance(type_, type) and issubclass(type_, SerializerType):
-        return type_()
-    if isinstance(type_, SerializerType):
-        return type_
-
-    return {
-        int: Integer,
-        float: Float,
-        str: String,
-        bool: Boolean,
-    }.get(type_, SerializerType)()
-
-
-class Nested:
-    """enable nested Serializable objects"""
-
-    def __init__(self, type_):
-        self.type_ = type_
-        self.__name__ = getattr(type_, "__name__", type_.__class__.__name__)
-
-    def __call__(self, *args, **kwargs):
-        # special case handling of single argument calls
-        if not kwargs and len(args) == 1:
-            arg0 = args[0]
-
-            if isinstance(arg0, self.type_):  # already the right shape
-                return arg0
-
-            if isinstance(arg0, dict):  # treat dict as **kwargs
-                kwargs = arg0
-                args = []
-
-            elif isinstance(arg0, list):  # treat list as *args
-                args = arg0
-
-        return self.type_(*args, **kwargs)
-
-    def serialize(self, instance):
-        """defer to type_'s serialize"""
-        return self.type_.serialize(instance)
-
-
-class Serializable:  # pylint: disable=too-few-public-methods
-    """used to prevent a circular reference to serializer.Serializable
-
-    Notice that serializer.Serializer is a subclass of this "interface", so
-    that "get_type" can reference this class without knowing about the
-    "serializer.py" module.
-    """
-
-
-class List:  # pylint: disable=too-few-public-methods
-    """same as above"""
-
-
 class SerializerType:
     """base type"""
 
     def __call__(self, value):
+        """accept untouched value"""
         return value
 
-    def serialize(self, value):
+    def __serialize__(self, value):
         """return untouched value"""
         return value
 
 
-class Integer(SerializerType):
+class Integer(SerializerType):  # pylint: disable=too-few-public-methods
     """int type (automatically assigned to int annotations)"""
 
     def __init__(self, minimum=None, maximum=None, name=None):
@@ -103,7 +41,7 @@ class Integer(SerializerType):
         return value
 
 
-class Float(SerializerType):
+class Float(SerializerType):  # pylint: disable=too-few-public-methods
     """float type (automatically assigned to float annotations)"""
 
     def __init__(  # pylint: disable=too-many-arguments
@@ -151,7 +89,7 @@ class Float(SerializerType):
         return value
 
 
-class String(SerializerType):
+class String(SerializerType):  # pylint: disable=too-few-public-methods
     """str type (automatically assigned to str annotations)"""
 
     def __init__(self, min_length=0, max_length=None):
@@ -181,7 +119,7 @@ class String(SerializerType):
         return value
 
 
-class Boolean(SerializerType):
+class Boolean(SerializerType):  # pylint: disable=too-few-public-methods
     """bool type (automatically assigned to bool annotations)"""
 
     __name__ = "bool"
@@ -209,7 +147,7 @@ class ISODateTime(SerializerType):
                 raise ValueError(err) from None
         return value
 
-    def serialize(self, value):
+    def __serialize__(self, value):
         return value.isoformat()
 
 
@@ -224,11 +162,11 @@ class ISODate(ISODateTime):
                 raise ValueError(err) from None
         return value
 
-    def serialize(self, value):
+    def __serialize__(self, value):
         return value.isoformat()
 
 
-class ISOTime(ISODateTime):
+class ISOTime(ISODateTime):  # pylint: disable=too-few-public-methods
     """a datetime.time object that serializes to an ISO string"""
 
     def __call__(self, value):
@@ -240,7 +178,7 @@ class ISOTime(ISODateTime):
         return value
 
 
-class OneOf(SerializerType):
+class OneOf(SerializerType):  # pylint: disable=too-few-public-methods
     """allow one item from *args"""
 
     def __init__(self, *args, name=None):
@@ -255,7 +193,7 @@ class OneOf(SerializerType):
         return value
 
 
-class SomeOf(SerializerType):
+class SomeOf(SerializerType):  # pylint: disable=too-few-public-methods
     """allow an array of items that are a subset of *args"""
 
     def __init__(self, *args, name=None):

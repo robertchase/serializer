@@ -1,7 +1,7 @@
 """List Type"""
 import json
 
-from serializer import types
+from serializer import get_type
 
 
 class ListTooShortError(ValueError):
@@ -25,21 +25,21 @@ class ListDuplicateItemError(ValueError):
         self.args = (f"{value} already in list",)
 
 
-class List(types.List):
+class List(get_type.List):
     """support a list as a Field type"""
 
     def __init__(self, element_type, min_length=0, max_length=0, allow_dups=True):
         self.min = min_length
         self.max = max_length
         self.allow_dups = allow_dups
-        self.type = types.get_type(element_type)
+        self.type = get_type.get_type(element_type)
 
     def __call__(self, value):
         return _List(self, value)
 
-    def serialize(self, value):
+    def __serialize__(self, value):
         """serialize "value" as a List"""
-        return value.serialize()
+        return value.__serialize__()
 
 
 class _List:
@@ -75,11 +75,11 @@ class _List:
                 raise
 
     def __repr__(self):
-        return f"List{self.serialize()}"
+        return f"List{self.__serialize__()}"
 
-    def serialize(self):
+    def __serialize__(self):
         """return a un-object-ed version of the list and any items"""
-        return [self.type.serialize(item) for item in self.store]
+        return [self.type.__serialize__(item) for item in self.store]
 
     def __len__(self):
         return len(self.store)

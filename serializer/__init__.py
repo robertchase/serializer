@@ -1,8 +1,8 @@
 """define module-level objects"""
+from .defaults import Optional
+from .defaults import OptionalReadOnly
+from .defaults import ReadOnly
+from .fields import get_fields
 from .list import List
-from .serializer import get_fields
-from .serializer import serialize
-from .serializer import Optional
-from .serializer import OptionalReadOnly
-from .serializer import ReadOnly
 from .serializer import Serializable
+from .serializer import serialize
