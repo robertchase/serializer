@@ -41,7 +41,7 @@ class Nested:
     """enable nested Serializable objects"""
 
     def __init__(self, type_):
-        self.type_ = type_
+        self.type = type_
         self.__name__ = getattr(type_, "__name__", type_.__class__.__name__)
 
     def __call__(self, *args, **kwargs):
@@ -49,7 +49,7 @@ class Nested:
         if not kwargs and len(args) == 1:
             arg0 = args[0]
 
-            if isinstance(arg0, self.type_):  # already the right shape
+            if isinstance(arg0, self.type):  # already the right shape
                 return arg0
 
             if isinstance(arg0, dict):  # treat dict as **kwargs
@@ -59,8 +59,8 @@ class Nested:
             elif isinstance(arg0, list):  # treat list as *args
                 args = arg0
 
-        return self.type_(*args, **kwargs)
+        return self.type(*args, **kwargs)
 
-    def __serialize__(self, instance):
-        """defer to type_'s __serialize__"""
-        return self.type_.__serialize__(instance)
+    def serialize(self, instance):
+        """defer to type's serialize_"""
+        return self.type.serialize_(instance)

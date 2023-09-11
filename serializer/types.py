@@ -7,15 +7,15 @@ class SerializerType:
     """base type"""
 
     def __call__(self, value):
-        """accept untouched value"""
+        """accept any value"""
         return value
 
-    def __serialize__(self, value):
+    def serialize(self, value):
         """return untouched value"""
         return value
 
 
-class Integer(SerializerType):  # pylint: disable=too-few-public-methods
+class Integer(SerializerType):
     """int type (automatically assigned to int annotations)"""
 
     def __init__(self, minimum=None, maximum=None, name=None):
@@ -41,7 +41,7 @@ class Integer(SerializerType):  # pylint: disable=too-few-public-methods
         return value
 
 
-class Float(SerializerType):  # pylint: disable=too-few-public-methods
+class Float(SerializerType):
     """float type (automatically assigned to float annotations)"""
 
     def __init__(  # pylint: disable=too-many-arguments
@@ -89,7 +89,7 @@ class Float(SerializerType):  # pylint: disable=too-few-public-methods
         return value
 
 
-class String(SerializerType):  # pylint: disable=too-few-public-methods
+class String(SerializerType):
     """str type (automatically assigned to str annotations)"""
 
     def __init__(self, min_length=0, max_length=None):
@@ -119,7 +119,7 @@ class String(SerializerType):  # pylint: disable=too-few-public-methods
         return value
 
 
-class Boolean(SerializerType):  # pylint: disable=too-few-public-methods
+class Boolean(SerializerType):
     """bool type (automatically assigned to bool annotations)"""
 
     __name__ = "bool"
@@ -147,7 +147,7 @@ class ISODateTime(SerializerType):
                 raise ValueError(err) from None
         return value
 
-    def __serialize__(self, value):
+    def serialize(self, value):
         return value.isoformat()
 
 
@@ -162,11 +162,11 @@ class ISODate(ISODateTime):
                 raise ValueError(err) from None
         return value
 
-    def __serialize__(self, value):
+    def serialize(self, value):
         return value.isoformat()
 
 
-class ISOTime(ISODateTime):  # pylint: disable=too-few-public-methods
+class ISOTime(ISODateTime):
     """a datetime.time object that serializes to an ISO string"""
 
     def __call__(self, value):
@@ -178,7 +178,7 @@ class ISOTime(ISODateTime):  # pylint: disable=too-few-public-methods
         return value
 
 
-class OneOf(SerializerType):  # pylint: disable=too-few-public-methods
+class OneOf(SerializerType):
     """allow one item from *args"""
 
     def __init__(self, *args, name=None):
@@ -193,7 +193,7 @@ class OneOf(SerializerType):  # pylint: disable=too-few-public-methods
         return value
 
 
-class SomeOf(SerializerType):  # pylint: disable=too-few-public-methods
+class SomeOf(SerializerType):
     """allow an array of items that are a subset of *args"""
 
     def __init__(self, *args, name=None):

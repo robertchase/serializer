@@ -127,7 +127,11 @@ class Serializable(get_type.Serializable):
         """bad idea for sensitive data, but handy nonetheless"""
         return f"{self.__class__.__name__}: {self.__dict__}"
 
-    def __serialize__(self):
+    def serialize_(self):
+        """serialize method
+
+        added underbar to keep object namespace clean
+        """
         return serialize(self)
 
 
@@ -139,9 +143,8 @@ def serialize(item):
     from any of the object hierachy's members' serialize methods, then
     special json.dumps handling may be necessary.
     """
-    fields = get_fields(item)
     return {
-        field.name: field.type.__serialize__(getattr(item, field.name))
-        for field in fields.values()
+        field.name: field.type.serialize(getattr(item, field.name))
+        for field in get_fields(item).values()
         if hasattr(item, field.name)
     }

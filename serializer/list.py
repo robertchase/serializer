@@ -37,9 +37,9 @@ class List(get_type.List):
     def __call__(self, value):
         return _List(self, value)
 
-    def __serialize__(self, value):
+    def serialize(self, value):
         """serialize "value" as a List"""
-        return value.__serialize__()
+        return value.serialize()
 
 
 class _List:
@@ -75,11 +75,11 @@ class _List:
                 raise
 
     def __repr__(self):
-        return f"List{self.__serialize__()}"
+        return f"List{self.serialize()}"
 
-    def __serialize__(self):
+    def serialize(self):
         """return a un-object-ed version of the list and any items"""
-        return [self.type.__serialize__(item) for item in self.store]
+        return [self.type.serialize(item) for item in self.store]
 
     def __len__(self):
         return len(self.store)
