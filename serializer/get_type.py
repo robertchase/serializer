@@ -10,7 +10,7 @@ class List:  # pylint: disable=too-few-public-methods
 
 
 class Serializable:  # pylint: disable=too-few-public-methods
-    """base class "interface" for serializer.Serializable
+    """base class "interface" for serializable.Serializable
 
     prevents circular reference
     """

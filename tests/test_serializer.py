@@ -3,7 +3,7 @@
 import pytest
 
 from serializer import Serializable, ReadOnly, Optional
-from serializer.serializer import (
+from serializer.serializable import (
     ExtraAttributeError,
     DuplicateAttributeError,
     UndefinedAttributeError,
