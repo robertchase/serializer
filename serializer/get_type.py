@@ -17,16 +17,16 @@ class Serializable:  # pylint: disable=too-few-public-methods
 
 
 def get_type(type_):
-    """map a type to a subclass of SerializerType"""
+    """map a type to a subclass of SerializableType"""
     if isinstance(type_, List):
         return type_
     if isinstance(type_, type) and issubclass(type_, Serializable):
-        return Nested(type_)
+        return Nested(type_())
     if isinstance(type_, Serializable):
         return Nested(type_)
-    if isinstance(type_, type) and issubclass(type_, types.SerializerType):
+    if isinstance(type_, type) and issubclass(type_, types.SerializableType):
         return type_()
-    if isinstance(type_, types.SerializerType):
+    if isinstance(type_, types.SerializableType):
         return type_
 
     return {
@@ -34,7 +34,7 @@ def get_type(type_):
         float: types.Float,
         str: types.String,
         bool: types.Boolean,
-    }.get(type_, types.SerializerType)()
+    }.get(type_, types.SerializableType)()
 
 
 class Nested:

@@ -3,7 +3,7 @@ from datetime import date, datetime, time
 import re
 
 
-class SerializerType:
+class SerializableType:
     """base type"""
 
     def __call__(self, value):
@@ -15,7 +15,7 @@ class SerializerType:
         return value
 
 
-class Integer(SerializerType):
+class Integer(SerializableType):
     """int type (automatically assigned to int annotations)"""
 
     def __init__(self, minimum=None, maximum=None, name=None):
@@ -41,7 +41,7 @@ class Integer(SerializerType):
         return value
 
 
-class Float(SerializerType):
+class Float(SerializableType):
     """float type (automatically assigned to float annotations)"""
 
     def __init__(  # pylint: disable=too-many-arguments
@@ -89,7 +89,7 @@ class Float(SerializerType):
         return value
 
 
-class String(SerializerType):
+class String(SerializableType):
     """str type (automatically assigned to str annotations)"""
 
     def __init__(self, min_length=0, max_length=None):
@@ -119,7 +119,7 @@ class String(SerializerType):
         return value
 
 
-class Boolean(SerializerType):
+class Boolean(SerializableType):
     """bool type (automatically assigned to bool annotations)"""
 
     __name__ = "bool"
@@ -136,7 +136,7 @@ class Boolean(SerializerType):
         raise ValueError("not a boolean")
 
 
-class ISODateTime(SerializerType):
+class ISODateTime(SerializableType):
     """a datetime.datetime object that serializes to an ISO string"""
 
     def __call__(self, value):
@@ -178,7 +178,7 @@ class ISOTime(ISODateTime):
         return value
 
 
-class OneOf(SerializerType):
+class OneOf(SerializableType):
     """allow one item from *args"""
 
     def __init__(self, *args, name=None):
@@ -193,7 +193,7 @@ class OneOf(SerializerType):
         return value
 
 
-class SomeOf(SerializerType):
+class SomeOf(SerializableType):
     """allow an array of items that are a subset of *args"""
 
     def __init__(self, *args, name=None):

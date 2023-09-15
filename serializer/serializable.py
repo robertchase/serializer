@@ -4,6 +4,7 @@ Use dataclass-like class-level field definitions to create an object which
 enforces the typing of values based on field annotations. Available fields
 are limited to those defined in the class.
 """
+from collections import namedtuple
 import inspect
 
 from serializer import defaults
@@ -147,25 +148,17 @@ class Serializable(get_type.Serializable):
         Run once, caching results in class.
         """
 
-        class AnnotatedField:  # pylint: disable=too-few-public-methods
-            """container for field definition"""
-
-            def __init__(
-                self, name, type_, is_required, is_readonly, has_default, default
-            ):  # pylint: disable=too-many-arguments
-                self.name = name
-                self.type = type_
-                self.is_required = is_required
-                self.is_readonly = is_readonly
-                self.has_default = has_default
-                self.default = default
-
         class_ = self.__class__
         if hasattr(class_, "__serializable__"):
             return class_.__serializable__
 
         # first time through, create a new dict of AnnotationFields in the class
         fields = class_.__serializable__ = {}
+
+        AnnotatedField = namedtuple(
+            "AnnotatedField",
+            "name, type, is_required, is_readonly, has_default, default",
+        )
 
         for nam, typ in inspect.get_annotations(class_).items():
             # normalize type
