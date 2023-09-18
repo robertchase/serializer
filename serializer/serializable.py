@@ -204,4 +204,6 @@ class Serializable(get_type.Serializable):
 
 def serialize(item):
     """convenience function for serialization"""
+    if not isinstance(item, Serializable):
+        raise AttributeError("expecting a Serializable instance")
     return item.serialize_()

@@ -57,12 +57,7 @@ class Float(SerializableType):
         self.exclusive_min = exclusive_min
         self.exclusive_max = exclusive_max
 
-        if (
-            minimum is None
-            and maximum is None
-            and not exclusive_min
-            and not exclusive_max
-        ):
+        if minimum is None and maximum is None:
             self.__name__ = "float"
 
         if name:
