@@ -67,7 +67,7 @@ class Serializable(get_type.Serializable):
     used to instantiate a new object with MyObject(**dict).
     """
 
-    def __init__(self, *args, **kwargs):  # pylint: disable=too-many-branches
+    def __init__(self, *args, ignore_extra_=False, **kwargs):  # pylint: disable=too-many-branches
         fields = self.fields_
 
         if len(args) > len(fields):
@@ -80,7 +80,8 @@ class Serializable(get_type.Serializable):
 
         for name in kwargs:
             if name not in fields:
-                raise UndefinedAttributeError(self, name)
+                if not ignore_extra_:
+                    raise UndefinedAttributeError(self, name)
 
         for field in fields.values():
             if field.is_required:
@@ -106,17 +107,22 @@ class Serializable(get_type.Serializable):
         self._setattr(field, value)
 
     def _setattr(self, field, value):
-        try:
-            normalized = field.type(value)
-        except (AttributeError, ValueError) as err:
-            type_name = getattr(field.type, "__name__", field.type.__class__.__name__)
-            error = (
-                f"invalid <{type_name}> value ({value}) for field '{field.name}'"
-                f": {str(err)}"
-            )
-            err.args = (error,)
-            raise
-        self.__dict__[field.name] = normalized
+        if not field.is_required and value is None:
+            if field.name in self.__dict__:
+                del self.__dict__[field.name]
+        else:
+            try:
+                normalized = field.type(value)
+            except (AttributeError, ValueError) as err:
+                type_name = getattr(
+                    field.type, "__name__", field.type.__class__.__name__)
+                error = (
+                    f"invalid <{type_name}> value ({value}) for field"
+                    f": '{field.name}' {str(err)}"
+                )
+                err.args = (error,)
+                raise
+            self.__dict__[field.name] = normalized
 
     def __delattr__(self, name):
         fields = self.fields_
