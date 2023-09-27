@@ -1,5 +1,6 @@
 """(de-)serializing type objects"""
 from datetime import date, datetime, time
+import json
 import re
 
 
@@ -130,6 +131,9 @@ class Boolean(SerializableType):
             return False
         raise ValueError("not a boolean")
 
+    def serialize(self, value):
+        return 1 if value else 0
+
 
 class ISODateTime(SerializableType):
     """a datetime.datetime object that serializes to an ISO string"""
@@ -198,7 +202,15 @@ class SomeOf(SerializableType):
             self.__name__ = name
 
     def __call__(self, value):
+        if isinstance(value, str):
+            try:
+                value = json.loads(value)
+            except json.JSONDecodeError as err:
+                raise ValueError(err) from None
         value = set(value)
         if not value.issubset(self.choices):
             raise ValueError(f"not a subset of {self.choices}")
         return list(value)
+
+    def serialize(self, value):
+        return json.dumps(value)
