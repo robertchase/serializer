@@ -67,7 +67,9 @@ class Serializable(get_type.Serializable):
     used to instantiate a new object with MyObject(**dict).
     """
 
-    def __init__(self, *args, ignore_extra_=False, **kwargs):  # pylint: disable=too-many-branches
+    def __init__(
+        self, *args, ignore_extra_=False, **kwargs
+    ):  # pylint: disable=too-many-branches
         fields = self.fields_
 
         if len(args) > len(fields):
@@ -115,10 +117,11 @@ class Serializable(get_type.Serializable):
                 normalized = field.type(value)
             except (AttributeError, ValueError) as err:
                 type_name = getattr(
-                    field.type, "__name__", field.type.__class__.__name__)
+                    field.type, "__name__", field.type.__class__.__name__
+                )
                 error = (
                     f"invalid <{type_name}> value ({value}) for field"
-                    f": '{field.name}' {str(err)}"
+                    f" '{field.name}': {str(err)}"
                 )
                 err.args = (error,)
                 raise
