@@ -207,10 +207,29 @@ class SomeOf(SerializableType):
                 value = json.loads(value)
             except json.JSONDecodeError as err:
                 raise ValueError(err) from None
-        value = set(value)
-        if not value.issubset(self.choices):
+        distinct = set(value)
+        if len(distinct) != len(value):
+            raise ValueError("not a unique list of values")
+        if not distinct.issubset(self.choices):
             raise ValueError(f"not a subset of {self.choices}")
-        return list(value)
+        return value
+
+    def serialize(self, value):
+        return json.dumps(value)
+
+
+class Map(SerializableType):
+    """map (dict) -> json"""
+
+    def __call__(self, value: dict):
+        if isinstance(value, str):
+            try:
+                value = json.loads(value)
+            except json.JSONDecodeError as err:
+                raise ValueError(err) from None
+        if not isinstance(value, dict):
+            raise ValueError("not a dict")
+        return value
 
     def serialize(self, value):
         return json.dumps(value)
