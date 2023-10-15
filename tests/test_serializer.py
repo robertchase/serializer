@@ -62,6 +62,18 @@ def test_read_only_attribute():
         instance.attr_a = 2
 
 
+class DefaultReadOnly(Serializable):
+    # pylint: disable=too-few-public-methods
+    attr_a: int = ReadOnly(10)
+
+
+def test_default_read_only():
+    instance = DefaultReadOnly()
+    assert instance.attr_a == 10
+    instance = DefaultReadOnly(20)
+    assert instance.attr_a == 20
+
+
 class BasicPrimitive(Serializable):
     # pylint: disable=too-few-public-methods
     attr_b: float = Optional
