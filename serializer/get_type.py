@@ -21,7 +21,7 @@ def get_type(type_):
     if isinstance(type_, List):
         return type_
     if isinstance(type_, type) and issubclass(type_, Serializable):
-        return Nested(type_())
+        return Nested(type_)
     if isinstance(type_, Serializable):
         return Nested(type_)
     if isinstance(type_, type) and issubclass(type_, types.SerializableType):
