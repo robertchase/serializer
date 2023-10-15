@@ -4,7 +4,7 @@ Use dataclass-like class-level field definitions to create an object which
 enforces the typing of values based on field annotations. Available fields
 are limited to those defined in the class.
 """
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 import inspect
 
 from serializer import defaults
@@ -169,44 +169,57 @@ class Serializable(get_type.Serializable):
             "name, type, is_required, is_readonly, has_default, default",
         )
 
-        for nam, typ in inspect.get_annotations(class_).items():
-            # normalize type
-            type_ = get_type.get_type(typ)
+        def bases(cls, result=None):
+            """return a list of classes in the hierachy
 
-            # basic field characteristics
-            is_required = False
-            is_readonly = False
-            has_default = False
-            default = None
+            enforce reverse order of precedence to support subclass overrides
+            """
+            result = OrderedDict() if result is None else result
+            for base in cls.__bases__[::-1]:  # right most superclass first
+                bases(base, result)  # start at the top and move down
+                result[base] = None
+            result[cls] = None
+            return list(result.keys())
 
-            # adjust field characteristics based on specified default values
-            # default values are stored as class attributes
-            if hasattr(class_, nam):
-                setting = getattr(class_, nam)
+        for cls in bases(class_):
+            for nam, typ in inspect.get_annotations(cls).items():
+                # normalize type
+                type_ = get_type.get_type(typ)
 
-                if setting == defaults.ReadOnly:  # class
-                    is_readonly = True
-                    is_required = True
-                elif isinstance(setting, defaults.ReadOnly):  # instance
-                    is_readonly = True
-                    has_default = True
-                    default = setting.default
-                elif setting == defaults.Optional:
-                    pass
-                elif setting == defaults.OptionalReadOnly:
-                    is_readonly = True
+                # basic field characteristics
+                is_required = False
+                is_readonly = False
+                has_default = False
+                default = None
+
+                # adjust field characteristics based on specified default values
+                # default values are stored as class attributes by python
+                if hasattr(cls, nam):
+                    setting = getattr(cls, nam)
+
+                    if setting == defaults.ReadOnly:  # class
+                        is_readonly = True
+                        is_required = True
+                    elif isinstance(setting, defaults.ReadOnly):  # instance
+                        is_readonly = True
+                        has_default = True
+                        default = setting.default
+                    elif setting == defaults.Optional:
+                        pass
+                    elif setting == defaults.OptionalReadOnly:
+                        is_readonly = True
+                    else:
+                        has_default = True
+                        default = setting
+
+                    delattr(cls, nam)  # don't need to keep these around
                 else:
-                    has_default = True
-                    default = setting
+                    is_required = True
 
-                delattr(class_, nam)  # don't need to keep these around
-            else:
-                is_required = True
-
-            # bundle up the field
-            fields[nam] = AnnotatedField(
-                nam, type_, is_required, is_readonly, has_default, default
-            )
+                # bundle up the field
+                fields[nam] = AnnotatedField(
+                    nam, type_, is_required, is_readonly, has_default, default
+                )
 
         return fields
 
