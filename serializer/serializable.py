@@ -169,16 +169,20 @@ class Serializable(get_type.Serializable):
             "name, type, is_required, is_readonly, has_default, default",
         )
 
-        def bases(cls, result=None):
+        def bases(start_class):
             """return a list of classes in the hierachy
 
             enforce reverse order of precedence to support subclass overrides
             """
-            result = OrderedDict() if result is None else result
-            for base in cls.__bases__[::-1]:  # right most superclass first
-                bases(base, result)  # start at the top and move down
-                result[base] = None
-            result[cls] = None
+
+            def search(cls):
+                for base in cls.__bases__[::-1]:  # right most superclass first
+                    search(base)  # start at the top and move down
+                    result[base] = None
+                result[cls] = None
+
+            result = OrderedDict()  # use keys as ordered set
+            search(start_class)
             return list(result.keys())
 
         for cls in bases(class_):
