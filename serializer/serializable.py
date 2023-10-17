@@ -164,11 +164,6 @@ class Serializable(get_type.Serializable):
         # first time through, create a new dict of AnnotationFields in the class
         fields = class_.__serializable__ = {}
 
-        AnnotatedField = namedtuple(
-            "AnnotatedField",
-            "name, type, is_required, is_readonly, has_default, default",
-        )
-
         def bases(start_class):
             """return a list of classes in the hierachy
 
@@ -187,45 +182,60 @@ class Serializable(get_type.Serializable):
 
         for cls in bases(class_):
             for nam, typ in inspect.get_annotations(cls).items():
-                # normalize type
-                type_ = get_type.get_type(typ)
-
-                # basic field characteristics
-                is_required = False
-                is_readonly = False
-                has_default = False
-                default = None
-
-                # adjust field characteristics based on specified default values
-                # default values are stored as class attributes by python
                 if hasattr(cls, nam):
-                    setting = getattr(cls, nam)
-
-                    if setting == defaults.ReadOnly:  # class
-                        is_readonly = True
-                        is_required = True
-                    elif isinstance(setting, defaults.ReadOnly):  # instance
-                        is_readonly = True
-                        has_default = True
-                        default = setting.default
-                    elif setting == defaults.Optional:
-                        pass
-                    elif setting == defaults.OptionalReadOnly:
-                        is_readonly = True
-                    else:
-                        has_default = True
-                        default = setting
-
-                    delattr(cls, nam)  # don't need to keep these around
+                    dflt = getattr(cls, nam)
+                    delattr(cls, nam)
                 else:
-                    is_required = True
+                    dflt = None
 
-                # bundle up the field
-                fields[nam] = AnnotatedField(
-                    nam, type_, is_required, is_readonly, has_default, default
-                )
+                add_field(fields, nam, typ, dflt)
 
         return fields
+
+
+def add_field(fields: dict, nam, typ: type = str, dflt=None):
+    """add a new annotated fields to fields"""
+
+    type_ = get_type.get_type(typ)
+
+    # basic field characteristics
+    is_required = False
+    is_readonly = False
+    has_default = False
+    default = None
+
+    # adjust field characteristics based on specified default values
+    # default values are stored as class attributes by python
+    if dflt:
+
+        if dflt == defaults.ReadOnly:  # class
+            is_readonly = True
+            is_required = True
+        elif isinstance(dflt, defaults.ReadOnly):  # instance
+            is_readonly = True
+            has_default = True
+            default = dflt.default
+        elif dflt == defaults.Optional:
+            pass
+        elif dflt == defaults.OptionalReadOnly:
+            is_readonly = True
+        else:
+            has_default = True
+            default = dflt
+
+    else:
+        is_required = True
+
+    # bundle up the field
+    fields[nam] = AnnotatedField(
+        nam, type_, is_required, is_readonly, has_default, default
+    )
+
+
+AnnotatedField = namedtuple(
+    "AnnotatedField",
+    "name, type, is_required, is_readonly, has_default, default",
+)
 
 
 def serialize(item):
