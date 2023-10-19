@@ -152,49 +152,69 @@ class Serializable(get_type.Serializable):
 
     @property
     def fields_(self):
-        """derive list of fields from class annotations
+        """return list of fields from class annotations"""
+        class_ = self.__class__
+        return derive_fields(class_)
 
-        Run once, caching results in class.
+
+def derive_fields(class_):
+    """derive list of fields from class annotations
+
+    Cache result in class.
+    """
+
+    # look in __dict__ to prevent accidentally picking up subclasses
+    if "__serializable__" in class_.__dict__:
+        return class_.__dict__["__serializable__"]  # use cached data
+
+    # first time through
+    fields = {}
+
+    def bases(start_class):
+        """return a list of classes in the hierachy
+
+        enforce reverse order of precedence to support subclass overrides
         """
 
-        class_ = self.__class__
-        if hasattr(class_, "__serializable__"):
-            return class_.__serializable__
+        def search(cls):
+            for base in cls.__bases__[::-1]:  # right most superclass first
+                search(base)  # start at the top and move down
+                result[base] = None
+            result[cls] = None
 
-        # first time through, create a new dict of AnnotationFields in the class
-        fields = class_.__serializable__ = {}
+        result = OrderedDict()  # use keys as ordered set
+        search(start_class)
+        return list(result.keys())
 
-        def bases(start_class):
-            """return a list of classes in the hierachy
-
-            enforce reverse order of precedence to support subclass overrides
-            """
-
-            def search(cls):
-                for base in cls.__bases__[::-1]:  # right most superclass first
-                    search(base)  # start at the top and move down
-                    result[base] = None
-                result[cls] = None
-
-            result = OrderedDict()  # use keys as ordered set
-            search(start_class)
-            return list(result.keys())
-
-        for cls in bases(class_):
+    for cls in bases(class_):
+        if "__serializable__" in cls.__dict__:
+            fields.update(cls.__dict__["__serializable__"])
+        else:
             for nam, typ in inspect.get_annotations(cls).items():
-                if hasattr(cls, nam):
+                if hasattr(cls, nam):  # default saved as class variable
                     dflt = getattr(cls, nam)
-                    delattr(cls, nam)
+                    if cls == class_:  # don't delete subclass defaults
+                        delattr(cls, nam)
                 else:
                     dflt = None
 
-                add_field(fields, nam, typ, dflt)
+                _add_field(fields, nam, typ, dflt)
 
-        return fields
+    class_.__serializable__ = fields
+
+    return fields
 
 
-def add_field(fields: dict, nam, typ: type = str, dflt=None):
-    """add a new annotated fields to fields"""
+def add_field(item, nam, typ: type = str, dflt=None):
+    """add a new annotated field to the end of item's field list"""
+    fields = derive_fields(item) if isinstance(item, type) else item.fields_
+    if nam in fields:
+        del fields[nam]
+    _add_field(fields, nam, typ, dflt)
+
+
+def _add_field(fields: dict, nam, typ: type = str, dflt=None):
+    """add a new annotated field to fields"""
 
     type_ = get_type.get_type(typ)
 
@@ -206,8 +226,7 @@ def add_field(fields: dict, nam, typ: type = str, dflt=None):
 
     # adjust field characteristics based on specified default values
     # default values are stored as class attributes by python
-    if dflt:
-
+    if dflt is not None:
         if dflt == defaults.ReadOnly:  # class
             is_readonly = True
             is_required = True

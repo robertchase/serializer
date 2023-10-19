@@ -5,3 +5,4 @@ from .defaults import ReadOnly
 from .list import List
 from .serializable import Serializable
 from .serializable import serialize
+from .serializable import add_field
