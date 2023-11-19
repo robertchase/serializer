@@ -138,19 +138,26 @@ class Boolean(SerializableType):
 class ISODateTime(SerializableType):
     """a datetime.datetime object that serializes to an ISO string"""
 
+    def __init__(self, force_utc=True):
+        self.force_utc = force_utc
+
     def __call__(self, value):
-        if not isinstance(value, datetime):
+        if isinstance(value, datetime):
+            result = value
+        else:
             try:
-                value = datetime.fromisoformat(value)
+                result = datetime.fromisoformat(value)
+                if self.force_utc and result.tzinfo is None:
+                    result = datetime.fromisoformat(value + "Z")
             except TypeError as err:
                 raise ValueError(err) from None
-        return value
+        return result
 
     def serialize(self, value):
         return value.isoformat()
 
 
-class ISODate(ISODateTime):
+class ISODate(SerializableType):
     """a datetime.date object that serializes to an ISO string"""
 
     def __call__(self, value):
