@@ -75,10 +75,10 @@ class Serializable(get_type.Serializable):
         if len(args) > len(fields):
             raise ExtraAttributeError(args[len(fields) :])
 
-        for value, field in zip(args, fields.values()):
-            if field.name in kwargs:
-                raise DuplicateAttributeError(field.name)
-            kwargs[field.name] = value  # convert args to kwargs
+        for value, name in zip(args, fields):
+            if name in kwargs:
+                raise DuplicateAttributeError(name)
+            kwargs[name] = value  # convert arg to kwarg
 
         for name in kwargs:
             if name not in fields:
@@ -225,7 +225,6 @@ def _add_field(fields: dict, nam, typ: type = str, dflt=None):
     default = None
 
     # adjust field characteristics based on specified default values
-    # default values are stored as class attributes by python
     if dflt is not None:
         if dflt == defaults.ReadOnly:  # class
             is_readonly = True
