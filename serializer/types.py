@@ -19,6 +19,8 @@ class SerializableType:
 class Integer(SerializableType):
     """int type (automatically assigned to int annotations)"""
 
+    valid = re.compile(r"[-+]?\d+$")
+
     def __init__(self, minimum=None, maximum=None, name=None):
         self.min = int(minimum) if minimum is not None else None
         self.max = int(maximum) if maximum is not None else None
@@ -30,7 +32,7 @@ class Integer(SerializableType):
             self.__name__ = name
 
     def __call__(self, value):
-        if not re.match(r"[-+]?\d+$", str(value)):
+        if not self.valid.match(str(value)):
             raise ValueError("not an integer")
         value = int(value)
         if self.min is not None:
@@ -44,6 +46,8 @@ class Integer(SerializableType):
 
 class Float(SerializableType):
     """float type (automatically assigned to float annotations)"""
+
+    valid = re.compile(r"[-+]?(\d+|\.\d+|\d+.\d*)$")
 
     def __init__(  # pylint: disable=too-many-arguments
         self,
@@ -65,7 +69,7 @@ class Float(SerializableType):
             self.__name__ = name
 
     def __call__(self, value):
-        if not re.match(r"[-+]?(\d+|\.\d+|\d+.\d*)$", str(value)):
+        if not self.valid.match(str(value)):
             raise ValueError("not a float")
         value = float(value)
         if self.min is not None:
@@ -138,8 +142,8 @@ class Boolean(SerializableType):
 class ISODateTime(SerializableType):
     """a datetime.datetime object that serializes to an ISO string"""
 
-    def __init__(self, force_utc=True):
-        self.force_utc = force_utc
+    def __init__(self, default_offset=None):
+        self.default_offset = default_offset
 
     def __call__(self, value):
         if isinstance(value, datetime):
@@ -147,8 +151,8 @@ class ISODateTime(SerializableType):
         else:
             try:
                 result = datetime.fromisoformat(value)
-                if self.force_utc and result.tzinfo is None:
-                    result = datetime.fromisoformat(value + "Z")
+                if self.default_offset and result.tzinfo is None:
+                    result = datetime.fromisoformat(value + self.default_offset)
             except TypeError as err:
                 raise ValueError(err) from None
         return result

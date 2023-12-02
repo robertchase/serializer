@@ -191,16 +191,17 @@ def test_boolean(value, is_valid, result):
 
 
 @pytest.mark.parametrize(
-    "value, force_utc, result",
+    "value, default_offset, result",
     (
-        ("2023-01-01T12:12:12.123456", False, "2023-01-01T12:12:12.123456"),
-        ("2023-01-01T12:12:12.123456", True, "2023-01-01T12:12:12.123456+00:00"),
-        ("2023-01-01T12:12:12.123456+01:00", False, "2023-01-01T12:12:12.123456+01:00"),
-        ("2023-01-01T12:12:12.123456+01:00", True, "2023-01-01T12:12:12.123456+01:00"),
+        ("2023-01-01T12:12:12.123456", None, "2023-01-01T12:12:12.123456"),
+        ("2023-01-01T12:12:12.123456", "Z", "2023-01-01T12:12:12.123456+00:00"),
+        ("2023-01-01T12:12:12.123456+01:00", None, "2023-01-01T12:12:12.123456+01:00"),
+        ("2023-01-01T12:12:12.123456+01:00", "Z", "2023-01-01T12:12:12.123456+01:00"),
+        ("2023-01-01T12:12:12.123456", "+05:00", "2023-01-01T12:12:12.123456+05:00"),
     ),
 )
-def test_isodatetime(value, force_utc, result):
-    type_ = types.ISODateTime(force_utc=force_utc)
+def test_isodatetime(value, default_offset, result):
+    type_ = types.ISODateTime(default_offset=default_offset)
     normal = type_(value)
     assert type_.serialize(normal) == result
 
