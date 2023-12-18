@@ -72,6 +72,8 @@ class Serializable(get_type.Serializable):
     ):  # pylint: disable=too-many-branches
         fields = self.fields_
 
+        args, kwargs = self._adjust_args_and_kwargs(args, kwargs)
+
         if len(args) > len(fields):
             raise ExtraAttributeError(args[len(fields) :])
 
@@ -97,6 +99,9 @@ class Serializable(get_type.Serializable):
         for field in fields.values():
             if field.name in kwargs:
                 self._setattr(field, kwargs[field.name])
+
+    def _adjust_args_and_kwargs(*args, **kwargs):
+        return args, kwargs
 
     def __setattr__(self, name, value):
         fields = self.fields_
