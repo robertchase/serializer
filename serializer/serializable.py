@@ -100,7 +100,7 @@ class Serializable(get_type.Serializable):
             if field.name in kwargs:
                 self._setattr(field, kwargs[field.name])
 
-    def _adjust_args_and_kwargs(*args, **kwargs):
+    def _adjust_args_and_kwargs(self, args, kwargs):
         return args, kwargs
 
     def __setattr__(self, name, value):
