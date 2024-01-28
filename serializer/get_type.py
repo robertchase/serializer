@@ -56,7 +56,7 @@ class Nested:
                 kwargs = arg0
                 args = []
 
-            elif isinstance(arg0, list):  # treat list as *args
+            elif isinstance(arg0, (list, tuple)):  # treat list as *args
                 args = arg0
 
         return self.type(*args, **kwargs)
