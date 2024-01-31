@@ -52,6 +52,23 @@ def test_min_max_integer(value, minimum, maximum, is_valid):
 
 
 @pytest.mark.parametrize(
+    "value, minimum, maximum, actual",
+    (
+        (10, 5, 15, 10),
+        (0, 5, 15, 5),
+        (20, 5, 15, 15),
+        (-100, -50, -15, -50),
+        (-10, -50, -15, -15),
+        (0, -50, -15, -15),
+    ),
+)
+def test_min_max_force_integer(value, minimum, maximum, actual):
+    """test integer operation with min/max using force"""
+    type_ = types.Integer(minimum=minimum, maximum=maximum, force=True)
+    assert type_(value) == actual
+
+
+@pytest.mark.parametrize(
     "value, is_valid, result",
     (
         (1, True, 1),

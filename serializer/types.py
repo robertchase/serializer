@@ -21,9 +21,10 @@ class Integer(SerializableType):
 
     valid = re.compile(r"[-+]?\d+$")
 
-    def __init__(self, minimum=None, maximum=None, name=None):
+    def __init__(self, minimum=None, maximum=None, force=False, name=None):
         self.min = int(minimum) if minimum is not None else None
         self.max = int(maximum) if maximum is not None else None
+        self.force = force  # force to min or max instead of raising Error
 
         if minimum is None and maximum is None:
             self.__name__ = "int"
@@ -37,10 +38,16 @@ class Integer(SerializableType):
         value = int(value)
         if self.min is not None:
             if value < self.min:
-                raise ValueError(f"not >= {self.min}")
+                if self.force:
+                    value = self.min
+                else:
+                    raise ValueError(f"not >= {self.min}")
         if self.max is not None:
             if value > self.max:
-                raise ValueError(f"not <= {self.max}")
+                if self.force:
+                    value = self.max
+                else:
+                    raise ValueError(f"not <= {self.max}")
         return value
 
 
