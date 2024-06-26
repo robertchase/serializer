@@ -4,6 +4,10 @@ import json
 import re
 
 
+class Constant:
+    """Read-only type who's value is assigned by the default."""
+
+
 class SerializableType:
     """base type"""
 

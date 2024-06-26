@@ -9,6 +9,7 @@ import inspect
 
 from serializer import defaults
 from serializer import get_type
+from serializer import types
 
 
 class ExtraAttributeError(AttributeError):
@@ -42,6 +43,20 @@ class RequiredAttributeError(AttributeError):
 
 class ReadOnlyFieldError(ValueError):
     """indicate illegal use of read-only field"""
+
+    def __init__(self, name):
+        self.args = (f"field '{name}' is read-only",)
+
+
+class ConstantMissingDefaultError(ValueError):
+    """indicate Constant without default value"""
+
+    def __init__(self, name):
+        self.args = (f"field '{name}' is read-only",)
+
+
+class ConstantFieldError(ValueError):
+    """indicate illegal use of constant field"""
 
     def __init__(self, name):
         self.args = (f"field '{name}' is read-only",)
@@ -92,6 +107,9 @@ class Serializable(get_type.Serializable):
                 if not field.has_default:
                     if field.name not in kwargs:
                         raise RequiredAttributeError(field.name)
+            if field.is_constant:
+                if field.name in kwargs:
+                    raise ConstantFieldError(field.name)
             if field.has_default:
                 if field.name not in kwargs:
                     kwargs[field.name] = field.default
@@ -226,13 +244,21 @@ def add_field(item, nam, typ: type = str, dflt=None):
 def _add_field(fields: dict, nam, typ: type = str, dflt=None):
     """add a new annotated field to fields"""
 
-    type_ = get_type.get_type(typ)
-
     # basic field characteristics
     is_required = False
     is_readonly = False
+    is_constant = False
     has_default = False
     default = None
+
+    if typ == types.Constant:
+        if dflt is None:
+            raise ConstantMissingDefaultError(nam)
+        typ = str
+        is_constant = True
+        is_readonly = True
+
+    type_ = get_type.get_type(typ)
 
     # adjust field characteristics based on specified default values
     if dflt is not None:
