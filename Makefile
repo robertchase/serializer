@@ -1,6 +1,6 @@
 NAME := $(shell basename $(PWD))
 PYTHONPATH := $(PWD)/.
-VENV := $(PWD)/.env
+VENV := $(PWD)/.venv
 
 PATH := $(VENV)/bin:$(PATH)
 BIN := PATH=$(PATH) PYTHONPATH=$(PYTHONPATH) $(VENV)/bin

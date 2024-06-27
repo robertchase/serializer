@@ -1,4 +1,5 @@
 """List Type"""
+
 import json
 
 from serializer import get_type

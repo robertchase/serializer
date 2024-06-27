@@ -1,5 +1,7 @@
 """(de-)serializing type objects"""
+
 from datetime import date, datetime, time
+import decimal
 import json
 import re
 
@@ -98,6 +100,25 @@ class Float(SerializableType):
                 if value > self.max:
                     raise ValueError(f"not <= {self.max}")
         return value
+
+
+class Decimal(SerializableType):
+    """decimal type"""
+
+    def __init__(self, precision=None):
+        self.format = f"{{0:.{precision}f}}"
+
+    def __call__(self, value):
+        try:
+            value = decimal.Decimal(value)
+        except decimal.InvalidOperation as exc:
+            raise ValueError(f"invalid Decimal {value}") from exc
+        return value
+
+    def serialize(self, value):
+        if self.format:
+            return self.format.format(value)
+        return str(value)
 
 
 class String(SerializableType):

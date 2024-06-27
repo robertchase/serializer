@@ -4,6 +4,7 @@ these tests are tied to implementation, particularly how __serializable__ is
 used and when default values are removed from the class. if any of these things
 change, the resulting behavior would be hard to debug.
 """
+
 import serializer
 
 

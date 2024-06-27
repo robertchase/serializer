@@ -4,6 +4,7 @@ Use dataclass-like class-level field definitions to create an object which
 enforces the typing of values based on field annotations. Available fields
 are limited to those defined in the class.
 """
+
 from collections import namedtuple, OrderedDict
 import inspect
 
@@ -282,13 +283,13 @@ def _add_field(fields: dict, nam, typ: type = str, dflt=None):
 
     # bundle up the field
     fields[nam] = AnnotatedField(
-        nam, type_, is_required, is_readonly, has_default, default
+        nam, type_, is_required, is_readonly, is_constant, has_default, default
     )
 
 
 AnnotatedField = namedtuple(
     "AnnotatedField",
-    "name, type, is_required, is_readonly, has_default, default",
+    "name, type, is_required, is_readonly, is_constant, has_default, default",
 )
 
 
