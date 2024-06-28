@@ -53,14 +53,7 @@ class ConstantMissingDefaultError(ValueError):
     """indicate Constant without default value"""
 
     def __init__(self, name):
-        self.args = (f"field '{name}' is read-only",)
-
-
-class ConstantFieldError(ValueError):
-    """indicate illegal use of constant field"""
-
-    def __init__(self, name):
-        self.args = (f"field '{name}' is read-only",)
+        self.args = (f"Constant field '{name}' must have a default value",)
 
 
 class Serializable(get_type.Serializable):
@@ -110,7 +103,7 @@ class Serializable(get_type.Serializable):
                         raise RequiredAttributeError(field.name)
             if field.is_constant:
                 if field.name in kwargs:
-                    raise ConstantFieldError(field.name)
+                    raise ReadOnlyFieldError(field.name)
             if field.has_default:
                 if field.name not in kwargs:
                     kwargs[field.name] = field.default
