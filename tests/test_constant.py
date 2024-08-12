@@ -12,7 +12,7 @@ class _constant(serializer.Serializable):
     a: types.Constant = "A"
 
 
-class _constant_missing_default(serializer.Serializable):
+class ConstantMissingDefault(serializer.Serializable):
     """Serializable with Constant attribute missing a default value."""
 
     a: types.Constant
@@ -24,13 +24,28 @@ def test_constant():
     assert test.a == "A"
 
 
+def test_constant_with_int():
+    """Test constant operation with int value."""
+    value = 10
+
+    class ContantInt(_constant):
+        """Constant with an int value."""
+
+        a: types.Constant = value
+
+    test = ContantInt()
+    assert test.a == value
+
+    assert test.serialize_() == {"a": value}
+
+
 def test_constant_missing_default():
     """Test missing default."""
     with pytest.raises(serializer.serializable.ConstantMissingDefaultError):
-        _constant_missing_default()
+        ConstantMissingDefault()
 
     with pytest.raises(serializer.serializable.ConstantMissingDefaultError):
-        _constant_missing_default(a="HI")
+        ConstantMissingDefault(a="HI")
 
 
 def test_constant_read_only():

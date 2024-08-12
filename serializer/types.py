@@ -6,7 +6,7 @@ import json
 import re
 
 
-class Constant:
+class Constant:  # pylint: disable=too-few-public-methods
     """Read-only type who's value is assigned by the default."""
 
 

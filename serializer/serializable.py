@@ -114,7 +114,12 @@ class Serializable(get_type.Serializable):
 
         self._after_init()
 
+    def _adjust_single_arg(self, arg):
+        return [arg], {}
+
     def _adjust_args_and_kwargs(self, args, kwargs):
+        if len(args) == 1 and len(kwargs) == 0:
+            return self._adjust_single_arg(args[0])
         return args, kwargs
 
     def _after_init(self):
@@ -248,7 +253,7 @@ def _add_field(fields: dict, nam, typ: type = str, dflt=None):
     if typ == types.Constant:
         if dflt is None:
             raise ConstantMissingDefaultError(nam)
-        typ = str
+        typ = type(dflt)
         is_constant = True
         is_readonly = True
 

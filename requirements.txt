@@ -1,3 +1,4 @@
 black
 ruff
+pylint
 pytest

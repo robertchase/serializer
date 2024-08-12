@@ -219,6 +219,7 @@ def test_boolean(value, is_valid, result):
     ),
 )
 def test_isodatetime(value, default_offset, result):
+    """Test ISODateTime operation."""
     type_ = types.ISODateTime(default_offset=default_offset)
     normal = type_(value)
     assert type_.serialize(normal) == result
