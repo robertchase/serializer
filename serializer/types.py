@@ -107,10 +107,14 @@ class Decimal(SerializableType):
 
     def __init__(self, precision=None):
         self.format = f"{{0:.{precision}f}}"
+        self.precision = "." + "0" * precision if precision else None
 
     def __call__(self, value):
         try:
-            value = decimal.Decimal(value)
+            if self.precision:
+                value = decimal.Decimal(value).quantize(decimal.Decimal(self.precision))
+            else:
+                value = decimal.Decimal(value)
         except decimal.InvalidOperation as exc:
             raise ValueError(f"invalid Decimal {value}") from exc
         return value
