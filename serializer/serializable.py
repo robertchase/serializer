@@ -7,6 +7,7 @@ are limited to those defined in the class.
 
 from collections import namedtuple, OrderedDict
 import inspect
+import json
 
 from serializer import defaults
 from serializer import get_type
@@ -114,12 +115,56 @@ class Serializable(get_type.Serializable):
 
         self._after_init()
 
-    def _adjust_single_arg(self, arg):
-        return [arg], {}
+    def _parse_string_arg(self, arg: str):
+        """Parse a single string argument."""
+        return arg
+
+    def _handle_string_arg(self, arg: str) -> tuple[list, dict]:
+        """Handle a single string argument passed to the constructor.
+
+        Return: args and kwargs
+
+        Logic:
+            1. Try to parse arg as a json string, replacing arg with the result
+               if parsing is successful
+
+            2. If arg is a string, call _parse_string_arg, replacing arg with
+               the result
+
+            3. a. if arg is a list, assign the list to args
+               b. else if arg is a dict, assign the dict to kwargs
+               c. else assign [arg] to args
+        """
+        kwargs = {}
+        try:
+            arg = json.loads(arg)
+        except json.JSONDecodeError:
+            pass
+        if isinstance(arg, str):
+            arg = self._parse_string_arg(arg)
+        if isinstance(arg, list):
+            args = arg
+        elif isinstance(arg, dict):
+            args = []
+            kwargs = arg
+        else:
+            args = [arg]
+        return args, kwargs
 
     def _adjust_args_and_kwargs(self, args, kwargs):
-        if len(args) == 1 and len(kwargs) == 0:
-            return self._adjust_single_arg(args[0])
+        """Adjust arguments to __init__ before assigning values.
+
+        If a single argument is specified, and the argument is a string, the
+        _handle_string_arg method is called to do any transformation of the
+        argument. This does reasonable things while trying to de-serialize data
+        from the string, deferring any special parsing to the _parse_string_arg
+        method.
+
+        Sub-classes can override any of these methods (including this one) to
+        achieve the desired argument handling. The default behavior is a NOP.
+        """
+        if not kwargs and len(args) == 1 and isinstance(args[0], str):
+            return self._handle_string_arg(args[0])
         return args, kwargs
 
     def _after_init(self):

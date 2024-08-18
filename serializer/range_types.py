@@ -1,7 +1,6 @@
 """Serializable date and datetime ranges."""
 
 import datetime
-import json
 import re
 
 from dateutil.relativedelta import relativedelta
@@ -26,38 +25,11 @@ class Range(serializer.Serializable):
     is_lower_exclusive: bool = False
     is_upper_exclusive: bool = False
 
-    def parser(self, value: str) -> list[str]:
-        """Parse range elements from a str passed as the only arg."""
-        return value.split(",")
+    def _parse_string_arg(self, arg):  # override
+        """Parse range elements as a comma separated string."""
+        return arg.split(",")
 
-    def _adjust_single_arg(self, arg):
-        """Handle single first argument.
-
-        If json string, load it.
-
-        Then:
-            If not json string, parse it as a range.
-            If list, leave it alone.
-            If dict, treat as kwargs.
-        """
-        kwargs = {}
-        if isinstance(arg, str):
-            try:
-                arg = json.loads(arg)
-            except json.decoder.JSONDecodeError:
-                pass
-        if isinstance(arg, str):
-            args = self.parser(arg)  # might raise ValueError
-        elif isinstance(arg, list):
-            args = arg
-        elif isinstance(arg, dict):
-            args = []
-            kwargs = arg
-        else:
-            args = [arg]
-        return args, kwargs
-
-    def _after_init(self):
+    def _after_init(self):  # override
         if self.lower_bound > self.upper_bound:
             raise ValueError("lower_bound cannot be greater than upper_bound")
 
@@ -94,6 +66,10 @@ class ISODateTimeRange(Range):
     lower_bound: ISODateTime
     upper_bound: ISODateTime
 
+    def _parse_string_arg(self, arg):
+        """Parse range elements as an ISO range."""
+        return parse_iso_range(arg, self.date_parser, self.duration_parser)
+
     def date_parser(self, value):
         """Parse datetime."""
         try:
@@ -104,12 +80,9 @@ class ISODateTimeRange(Range):
         except ValueError:
             raise ValueError("invalid datetime value") from None
 
-    def duration_pre_parser(self, value):
-        """NOP duration parser."""
-        return value
-
-    def parser(self, value):
-        return parse_iso_range(value, self.date_parser, self.duration_pre_parser)
+    def duration_parser(self, value):
+        """Parse duration value."""
+        return parse_iso_duration(value)
 
 
 class ISODateRange(ISODateTimeRange):
@@ -119,6 +92,7 @@ class ISODateRange(ISODateTimeRange):
     upper_bound: ISODate
 
     def date_parser(self, value):
+        """Parse datetime.date."""
         try:
             return datetime.datetime.fromisoformat(value).date()
         except ValueError:
@@ -128,11 +102,12 @@ class ISODateRange(ISODateTimeRange):
         except ValueError:
             raise ValueError("invalid date value") from None
 
-    def duration_pre_parser(self, value):
-        return value.split("T")[0]
+    def duration_parser(self, value):
+        """Remove time portion from duration value before parsing."""
+        return parse_iso_duration(value.split("T")[0])
 
 
-def parse_iso_range(value: str, date_parser, duration_pre_parser):
+def parse_iso_range(value: str, date_parser, duration_parser):
     """parse a daterange into a pair (list) of datetime or date values"""
 
     if len(parts := re.split(r"/|--", value)) == 1:
@@ -145,12 +120,12 @@ def parse_iso_range(value: str, date_parser, duration_pre_parser):
 
     if part1[0] == "P":
         end_date = date_parser(part2)
-        if not (duration := parse_iso_duration(duration_pre_parser(part1))):
+        if (duration := duration_parser(part1)) is None:
             raise ValueError("invalid duration value")
         start_date = end_date - duration
     elif part2[0] == "P":
         start_date = date_parser(part1)
-        if not (duration := parse_iso_duration(duration_pre_parser(part2))):
+        if (duration := duration_parser(part2)) is None:
             raise ValueError("invalid duration value")
         end_date = start_date + duration
     else:
