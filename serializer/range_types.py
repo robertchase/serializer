@@ -1,9 +1,8 @@
 """Serializable date and datetime ranges."""
 
+from collections import namedtuple
 import datetime
 import re
-
-from dateutil.relativedelta import relativedelta
 
 import serializer
 from serializer.types import ISODateTime, ISODate
@@ -18,10 +17,17 @@ class Range(serializer.Serializable):
     If is_upper_exclusive is True or is_lower_exclusive is True, comparisons
     on the respective bounds will exclude the bound itself; otherwise, the
     bound is part of the range.
+
+    If upper_bound or lower_bound (not both) are missing, then they are not
+    checked (the range is unbounded in that direction).
+
+    If a subclass wants to use non-int bounds, the "serializer.ReadOnly"
+    designation will make the bounds immutable (this is a good idea, because a
+    range whose bounds change over time is a surprising object).
     """
 
-    lower_bound: int
-    upper_bound: int
+    lower_bound: int = serializer.ReadOnly(None)
+    upper_bound: int = serializer.ReadOnly(None)
     is_lower_exclusive: bool = False
     is_upper_exclusive: bool = False
 
@@ -30,19 +36,25 @@ class Range(serializer.Serializable):
         return arg.split(",")
 
     def _after_init(self):  # override
+        if self.lower_bound is None and self.upper_bound is None:
+            raise ValueError("lower_bound or upper_bound must be assigned")
         if self.lower_bound > self.upper_bound:
             raise ValueError("lower_bound cannot be greater than upper_bound")
 
     def contains(self, value: datetime.datetime) -> bool:
         """Checks if value is within the range bounds."""
-        if self.is_lower_exclusive and value <= self.lower_bound:
-            return False
-        if value < self.lower_bound:
-            return False
-        if self.is_upper_exclusive and value >= self.upper_bound:
-            return False
-        if value > self.upper_bound:
-            return False
+        if self.lower_bound is not None:
+            if self.is_lower_exclusive:
+                if value <= self.lower_bound:
+                    return False
+            elif value < self.lower_bound:
+                return False
+        if self.upper_bound is not None:
+            if self.is_upper_exclusive:
+                if value >= self.upper_bound:
+                    return False
+            elif value > self.upper_bound:
+                return False
         return True
 
 
@@ -63,8 +75,8 @@ class ISODateTimeRange(Range):
     If timezone information is not provided, then "Z" will be used.
     """
 
-    lower_bound: ISODateTime
-    upper_bound: ISODateTime
+    lower_bound: ISODateTime = serializer.ReadOnly(None)
+    upper_bound: ISODateTime = serializer.ReadOnly(None)
 
     def _parse_string_arg(self, arg):
         """Parse range elements as an ISO range."""
@@ -88,8 +100,8 @@ class ISODateTimeRange(Range):
 class ISODateRange(ISODateTimeRange):
     """A range bounded by two dates."""
 
-    lower_bound: ISODate
-    upper_bound: ISODate
+    lower_bound: ISODate = serializer.ReadOnly(None)
+    upper_bound: ISODate = serializer.ReadOnly(None)
 
     def date_parser(self, value):
         """Parse datetime.date."""
@@ -122,12 +134,12 @@ def parse_iso_range(value: str, date_parser, duration_parser):
         end_date = date_parser(part2)
         if (duration := duration_parser(part1)) is None:
             raise ValueError("invalid duration value")
-        start_date = end_date - duration
+        start_date = sub_duration(end_date, duration)
     elif part2[0] == "P":
         start_date = date_parser(part1)
         if (duration := duration_parser(part2)) is None:
             raise ValueError("invalid duration value")
-        end_date = start_date + duration
+        end_date = add_duration(start_date, duration)
     else:
         start_date = date_parser(part1)
         end_date = date_parser(part2)
@@ -138,17 +150,20 @@ def parse_iso_range(value: str, date_parser, duration_parser):
 _valid_iso_duration = re.compile(
     r"P(?:(\d+)Y)?"
     r"(?:(\d+)M)?"
-    r"(?:(\d+(?:[\.,]\d+)?)W)?"  # note: decimal is either "." or ","
-    r"(?:(\d+(?:[\.,]\d+)?)D)?"
+    r"(?:(\d+)W)?"
+    r"(?:(\d+)D)?"
     r"(?:T"
-    r"(?:(\d+(?:[\.,]\d+)?)H)?"
-    r"(?:(\d+(?:[\.,]\d+)?)M)?"
-    r"(?:(\d+(?:[\.,]\d+)?)S)?"
+    r"(?:(\d+)H)?"
+    r"(?:(\d+)M)?"
+    r"(?:(\d+(?:[\.,]\d+)?)S)?"  # note: decimal is either "." or ","
     r")?$"
 )
 
 
-def parse_iso_duration(value: str) -> relativedelta | None:
+Duration = namedtuple("Duration", "years months weeks days hours minutes seconds")
+
+
+def parse_iso_duration(value: str) -> Duration | None:
     """Parse ISO 8601 duration.
 
     A valid duration is of the form:
@@ -161,23 +176,68 @@ def parse_iso_duration(value: str) -> relativedelta | None:
     A valid duration must:
         * begin with "P" (for period)
         * include at least one element (even if it is zero)
-        * allow decimal numbers for every element except (Y)ear and (M)onth
-          (this differs from the standard which implies that only the last
-           defined element can include a decimal)
+        * allow only int values, except for seconds, which can be float
+          (this differs from the standard)
     """
     result = None
     if m := _valid_iso_duration.match(value):
         if any(m.groups()):
-            years, months, weeks, days, hours, minutes, seconds = [
-                float(val.replace(",", ".")) if val else 0 for val in m.groups()
-            ]
-            result = relativedelta(
-                years=years,
-                months=months,
-                weeks=weeks,
-                days=days,
-                hours=hours,
-                minutes=minutes,
-                seconds=seconds,
+            result = Duration(
+                years=int(m.group(1)) if m.group(1) else 0,
+                months=int(m.group(2)) if m.group(2) else 0,
+                weeks=int(m.group(3)) if m.group(3) else 0,
+                days=int(m.group(4)) if m.group(4) else 0,
+                hours=int(m.group(5)) if m.group(5) else 0,
+                minutes=int(m.group(6)) if m.group(6) else 0,
+                seconds=float(m.group(7).replace(",", ".")) if m.group(7) else 0,
             )
     return result
+
+
+def sub_duration(
+    ts: datetime.datetime | datetime.date, duration: Duration
+) -> datetime.datetime | datetime.date:
+    """Subtract time from a datetime."""
+    negative_duration = Duration(
+        -duration.years,
+        -duration.months,
+        -duration.weeks,
+        -duration.days,
+        -duration.hours,
+        -duration.minutes,
+        -duration.seconds,
+    )
+    return add_duration(ts, negative_duration)
+
+
+def add_duration(
+    ts: datetime.datetime | datetime.date, duration: Duration
+) -> datetime.datetime | datetime.date:
+    """Add time to a datetime or date."""
+    if isinstance(ts, datetime.datetime):
+        return add_duration_datetime(ts, duration)
+    return add_duration_date(ts, duration)
+
+
+def add_duration_date(ts: datetime.date, duration: Duration) -> datetime.date:
+    """Add time to a datetime.date."""
+    year = ts.year + duration.years + (ts.month + duration.months - 1) // 12
+    month = (ts.month + duration.months - 1) % 12 + 1
+    return datetime.date(year, month, 1) + datetime.timedelta(
+        days=duration.days + ts.day - 1, weeks=duration.weeks
+    )
+
+
+def add_duration_datetime(
+    ts: datetime.datetime, duration: Duration
+) -> datetime.datetime:
+    """Add time to a datetime.datetime."""
+    tzinfo = datetime.timezone.utc if ts.tzinfo is None else ts.tzinfo
+    dt = add_duration_date(ts.date(), duration)
+    return datetime.datetime(
+        dt.year, dt.month, dt.day, tzinfo=tzinfo
+    ) + datetime.timedelta(
+        hours=ts.hour + duration.hours,
+        minutes=ts.minute + duration.minutes,
+        seconds=ts.second + duration.seconds,
+    )

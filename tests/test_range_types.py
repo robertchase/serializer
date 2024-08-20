@@ -11,6 +11,23 @@ UTC = datetime.timezone.utc
 
 
 @pytest.mark.parametrize(
+    "lower, upper, l_exclusive, u_exclusive, value, is_contained",
+    (
+        (1, 10, False, False, 1, True),
+        (1, 10, True, False, 1, False),
+        (1, 10, False, False, 10, True),
+        (1, 10, False, True, 10, False),
+    ),
+)
+def test_contains(lower, upper, l_exclusive, u_exclusive, value, is_contained):
+    test = range_types.Range(lower, upper, l_exclusive, u_exclusive)
+    if is_contained:
+        assert test.contains(value)
+    else:
+        assert not test.contains(value)
+
+
+@pytest.mark.parametrize(
     "value, lower, upper",
     (
         (
@@ -55,11 +72,12 @@ def test_parse_iso_date_range(value, lower, upper):
     (
         ("P0Y", (0, 0, 0, 0, 0, 0, 0)),
         ("P1Y", (1, 0, 0, 0, 0, 0, 0)),
-        ("P10W", (0, 0, 10, 70, 0, 0, 0)),
-        ("P14D", (0, 0, 2, 14, 0, 0, 0)),
+        ("P10W", (0, 0, 10, 0, 0, 0, 0)),
+        ("P14D", (0, 0, 0, 14, 0, 0, 0)),
         ("P1Y2M3DT4H5M6S", (1, 2, 0, 3, 4, 5, 6)),
-        ("PT1.5M", (0, 0, 0, 0, 0, 1.5, 0)),
-        ("P1.5D", (0, 0, 0, 1.5, 0, 0, 0)),
+        ("P1M", (0, 1, 0, 0, 0, 0, 0)),
+        ("PT1M", (0, 0, 0, 0, 0, 1, 0)),
+        ("PT1.5S", (0, 0, 0, 0, 0, 0, 1.5)),
         ("P0Y", (0, 0, 0, 0, 0, 0, 0)),
         ("P", None),
         ("PY", None),
