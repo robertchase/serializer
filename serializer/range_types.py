@@ -31,7 +31,7 @@ class Range(serializer.Serializable):
     is_lower_exclusive: bool = False
     is_upper_exclusive: bool = False
 
-    def _parse_string_arg(self, arg):  # override
+    def _parse_string_arg(self, arg: str):  # override
         """Parse range elements as a comma separated string."""
         return arg.split(",")
 
@@ -41,7 +41,7 @@ class Range(serializer.Serializable):
         if self.lower_bound > self.upper_bound:
             raise ValueError("lower_bound cannot be greater than upper_bound")
 
-    def contains(self, value: datetime.datetime) -> bool:
+    def contains(self, value) -> bool:
         """Checks if value is within the range bounds."""
         if self.lower_bound is not None:
             if self.is_lower_exclusive:
@@ -56,6 +56,9 @@ class Range(serializer.Serializable):
             elif value > self.upper_bound:
                 return False
         return True
+
+
+Duration = namedtuple("Duration", "years months weeks days hours minutes seconds")
 
 
 class ISODateTimeRange(Range):
@@ -82,7 +85,7 @@ class ISODateTimeRange(Range):
         """Parse range elements as an ISO range."""
         return parse_iso_range(arg, self.date_parser, self.duration_parser)
 
-    def date_parser(self, value):
+    def date_parser(self, value: str) -> datetime.datetime:
         """Parse datetime."""
         try:
             parsed = datetime.datetime.fromisoformat(value)
@@ -92,7 +95,7 @@ class ISODateTimeRange(Range):
         except ValueError:
             raise ValueError("invalid datetime value") from None
 
-    def duration_parser(self, value):
+    def duration_parser(self, value: str) -> Duration:
         """Parse duration value."""
         return parse_iso_duration(value)
 
@@ -103,7 +106,7 @@ class ISODateRange(ISODateTimeRange):
     lower_bound: ISODate = serializer.ReadOnly(None)
     upper_bound: ISODate = serializer.ReadOnly(None)
 
-    def date_parser(self, value):
+    def date_parser(self, value: str) -> datetime.date:
         """Parse datetime.date."""
         try:
             return datetime.datetime.fromisoformat(value).date()
@@ -114,7 +117,7 @@ class ISODateRange(ISODateTimeRange):
         except ValueError:
             raise ValueError("invalid date value") from None
 
-    def duration_parser(self, value):
+    def duration_parser(self, value: str) -> Duration:
         """Remove time portion from duration value before parsing."""
         return parse_iso_duration(value.split("T")[0])
 
@@ -160,9 +163,6 @@ _valid_iso_duration = re.compile(
 )
 
 
-Duration = namedtuple("Duration", "years months weeks days hours minutes seconds")
-
-
 def parse_iso_duration(value: str) -> Duration | None:
     """Parse ISO 8601 duration.
 
@@ -182,14 +182,17 @@ def parse_iso_duration(value: str) -> Duration | None:
     result = None
     if m := _valid_iso_duration.match(value):
         if any(m.groups()):
+            years, months, weeks, days, hours, minutes = [
+                int(val) if val is not None else 0 for val in m.groups()[:-1]
+            ]
             result = Duration(
-                years=int(m.group(1)) if m.group(1) else 0,
-                months=int(m.group(2)) if m.group(2) else 0,
-                weeks=int(m.group(3)) if m.group(3) else 0,
-                days=int(m.group(4)) if m.group(4) else 0,
-                hours=int(m.group(5)) if m.group(5) else 0,
-                minutes=int(m.group(6)) if m.group(6) else 0,
-                seconds=float(m.group(7).replace(",", ".")) if m.group(7) else 0,
+                years,
+                months,
+                weeks,
+                days,
+                hours,
+                minutes,
+                float(m.group(7).replace(",", ".")) if m.group(7) else 0,
             )
     return result
 
@@ -197,7 +200,7 @@ def parse_iso_duration(value: str) -> Duration | None:
 def sub_duration(
     ts: datetime.datetime | datetime.date, duration: Duration
 ) -> datetime.datetime | datetime.date:
-    """Subtract time from a datetime."""
+    """Subtract time from a datetime or date."""
     negative_duration = Duration(
         -duration.years,
         -duration.months,
