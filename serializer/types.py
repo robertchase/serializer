@@ -228,6 +228,7 @@ class OneOf(SerializableType):
     """allow one item from *args"""
 
     def __init__(self, *args, name=None):
+        self.ordered = args
         self.valid = set(args)
 
         if name:
