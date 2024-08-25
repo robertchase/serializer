@@ -60,7 +60,7 @@ class Integer(SerializableType):
 class Float(SerializableType):
     """float type (automatically assigned to float annotations)"""
 
-    valid = re.compile(r"[-+]?(\d+|\.\d+|\d+.\d*)$")
+    valid = re.compile(r"\s*[-+]?(\d+|\.\d+|\d+.\d*)\s*$")
 
     def __init__(  # pylint: disable=too-many-arguments
         self,
