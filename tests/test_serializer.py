@@ -111,19 +111,6 @@ def test_false_default():
     assert hasattr(instance, "attr_a")
 
 
-class BooleanNoneDefault(Serializable):  # pylint: disable=too-few-public-methods
-    attr_a: bool = None
-
-
-def test_none_default():
-    instance = BooleanNoneDefault()
-    assert hasattr(instance, "attr_a")
-    instance.attr_a = True
-    assert instance.attr_a
-    instance.attr_a = False
-    assert not instance.attr_a
-
-
 def test_delete():
     instance = BasicPrimitive(attr_c=True)
     assert hasattr(instance, "attr_c")

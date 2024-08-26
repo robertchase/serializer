@@ -182,9 +182,7 @@ class Serializable(get_type.Serializable):
 
     def _setattr(self, field, value):
         if not field.is_required and value is None:
-            if field.has_default and field.default is None:
-                self.__dict__[field.name] = None
-            elif field.name in self.__dict__:
+            if field.name in self.__dict__:
                 del self.__dict__[field.name]
         else:
             try:
@@ -266,36 +264,35 @@ def derive_fields(class_):
         else:
             for nam, typ in inspect.get_annotations(cls).items():
                 if hasattr(cls, nam):  # default saved as class variable
-                    has_default = True
                     dflt = getattr(cls, nam)
                     if cls == class_:  # don't delete subclass defaults
                         delattr(cls, nam)
                 else:
-                    has_default = False
                     dflt = None
 
-                _add_field(fields, nam, typ, dflt, has_default)
+                _add_field(fields, nam, typ, dflt)
 
     class_.__serializable__ = fields
 
     return fields
 
 
-def add_field(item, nam, typ: type = str, dflt=None, has_default=False):
+def add_field(item, nam, typ: type = str, dflt=None):
     """add a new annotated field to the end of item's field list"""
     fields = derive_fields(item) if isinstance(item, type) else item.fields_
     if nam in fields:
         del fields[nam]
-    _add_field(fields, nam, typ, dflt, has_default)
+    _add_field(fields, nam, typ, dflt)
 
 
-def _add_field(fields: dict, nam, typ: type = str, dflt=None, has_default=False):
+def _add_field(fields: dict, nam, typ: type = str, dflt=None):
     """add a new annotated field to fields"""
 
     # basic field characteristics
     is_required = False
     is_readonly = False
     is_constant = False
+    has_default = False
     default = None
 
     if typ == types.Constant:
@@ -308,7 +305,7 @@ def _add_field(fields: dict, nam, typ: type = str, dflt=None, has_default=False)
     type_ = get_type.get_type(typ)
 
     # adjust field characteristics based on specified default values
-    if has_default:
+    if dflt is not None:
         if dflt == defaults.ReadOnly:  # class
             is_readonly = True
             is_required = True
