@@ -207,6 +207,25 @@ class Serializable(get_type.Serializable):
             raise ReadOnlyFieldError(name)
         del self.__dict__[name]
 
+    def __getattribute__(self, name):
+        """Prevent superclass items from sneaking into the __dict__.
+
+        Since we only delete default values from our __dict__ (see
+        derive_fields), then superclasses that are Serializable might still
+        contain defaults that will get grabbed if our local attribute is not
+        set (not set means that it doesn't exist in the instance). Here we
+        make sure to only check for values of defined fields in the local
+        instance's __dict__; otherwise, we defer to standard processing.
+        """
+        class_ = object.__getattribute__(self, "__class__")
+        fields = derive_fields(class_)
+        if name in fields:
+            store = super().__getattribute__("__dict__")
+            if name in store:
+                return store[name]
+            raise AttributeError
+        return super().__getattribute__(name)
+
     def __repr__(self):
         """bad idea for sensitive data, but handy nonetheless"""
         return f"{self.__class__.__name__}: {self.__dict__}"
