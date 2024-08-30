@@ -18,16 +18,12 @@ class Range(serializer.Serializable):
     on the respective bounds will exclude the bound itself; otherwise, the
     bound is part of the range.
 
-    If upper_bound or lower_bound (not both) are missing, then they are not
+    If upper_bound or lower_bound (not both) is missing, then it will not
     checked (the range is unbounded in that direction).
-
-    If a subclass wants to use non-int bounds, the "serializer.ReadOnly"
-    designation will make the bounds immutable (this is a good idea, because a
-    range whose bounds change over time is a surprising object).
     """
 
-    lower_bound: int = serializer.ReadOnly(None)
-    upper_bound: int = serializer.ReadOnly(None)
+    lower_bound: int = serializer.Optional
+    upper_bound: int = serializer.Optional
     is_lower_exclusive: bool = False
     is_upper_exclusive: bool = False
 
@@ -36,20 +32,23 @@ class Range(serializer.Serializable):
         return arg.split(",")
 
     def _after_init(self):  # override
-        if self.lower_bound is None and self.upper_bound is None:
+        lower = getattr(self, "lower_bound", None)
+        upper = getattr(self, "upper_bound", None)
+        if lower is None and upper is None:
             raise ValueError("lower_bound or upper_bound must be assigned")
-        if self.lower_bound > self.upper_bound:
-            raise ValueError("lower_bound cannot be greater than upper_bound")
+        if lower is not None and upper is not None:
+            if self.lower_bound > self.upper_bound:
+                raise ValueError("lower_bound cannot be greater than upper_bound")
 
     def contains(self, value) -> bool:
         """Checks if value is within the range bounds."""
-        if self.lower_bound is not None:
+        if hasattr(self, "lower_bound"):
             if self.is_lower_exclusive:
                 if value <= self.lower_bound:
                     return False
             elif value < self.lower_bound:
                 return False
-        if self.upper_bound is not None:
+        if hasattr(self, "upper_bound"):
             if self.is_upper_exclusive:
                 if value >= self.upper_bound:
                     return False
@@ -78,8 +77,8 @@ class ISODateTimeRange(Range):
     If timezone information is not provided, then "Z" will be used.
     """
 
-    lower_bound: ISODateTime = serializer.ReadOnly(None)
-    upper_bound: ISODateTime = serializer.ReadOnly(None)
+    lower_bound: ISODateTime = serializer.Optional
+    upper_bound: ISODateTime = serializer.Optional
 
     def _parse_string_arg(self, arg):
         """Parse range elements as an ISO range."""
@@ -103,8 +102,8 @@ class ISODateTimeRange(Range):
 class ISODateRange(ISODateTimeRange):
     """A range bounded by two dates."""
 
-    lower_bound: ISODate = serializer.ReadOnly(None)
-    upper_bound: ISODate = serializer.ReadOnly(None)
+    lower_bound: ISODate = serializer.Optional
+    upper_bound: ISODate = serializer.Optional
 
     def date_parser(self, value: str) -> datetime.date:
         """Parse datetime.date."""
