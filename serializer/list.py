@@ -57,7 +57,7 @@ class _List:
                 value = json.loads(value)
             except json.JSONDecodeError:
                 pass
-        if not isinstance(value, list):
+        if not isinstance(value, (list, tuple, _List)):
             raise AttributeError("expecting a list")
         if self.min > 0:
             if len(value) < self.min:
