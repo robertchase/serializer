@@ -254,7 +254,7 @@ def derive_fields(class_):
     Cache result in class.
     """
 
-    # look in __dict__ to prevent accidentally picking up subclasses
+    # look in __dict__ to prevent accidentally picking up superclasses
     if "__serializable__" in class_.__dict__:
         return class_.__dict__["__serializable__"]  # use cached data
 
