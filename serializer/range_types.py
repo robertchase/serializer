@@ -74,6 +74,22 @@ class ISODateTimeRange(Range):
         PT1H/24-01-01T13:00:00Z
         24-01-01T12:00:00Z--PT60M
 
+    A single string arg with two separated ISO range values can also be
+    supplied, which will indicate durations before and after the current time.
+
+    The following indicates a range of one hour before the current time and
+    fifteen minutes after the current time:
+
+        PT1H/PT15M
+
+    If a single string arg is missing one or both separated values, then the
+    current time is assumed for the missing value(s).
+
+    The following indicates the ten previous hours (a range from 10 hours ago
+    until now):
+
+        PT10H/
+
     If timezone information is not provided, then "Z" will be used.
     """
 
@@ -122,17 +138,27 @@ class ISODateRange(ISODateTimeRange):
 
 
 def parse_iso_range(value: str, date_parser, duration_parser):
-    """parse a daterange into a pair (list) of datetime or date values"""
+    """Parse a daterange into a pair (list) of datetime or date values."""
 
     if len(parts := re.split(r"/|--", value)) == 1:
         raise ValueError("range separator not found")
 
     part1, part2 = parts
+    now = datetime.datetime.now().isoformat()
+    if not part1:
+        part1 = now
+    if not part2:
+        part2 = now
 
     if part1[0] == part2[0] == "P":
-        raise ValueError("both parts of a range cannot be durations")
-
-    if part1[0] == "P":
+        middle = date_parser(now)
+        if (duration := duration_parser(part1)) is None:
+            raise ValueError("invalid duration value")
+        start_date = sub_duration(middle, duration)
+        if (duration := duration_parser(part2)) is None:
+            raise ValueError("invalid duration value")
+        end_date = add_duration(middle, duration)
+    elif part1[0] == "P":
         end_date = date_parser(part2)
         if (duration := duration_parser(part1)) is None:
             raise ValueError("invalid duration value")

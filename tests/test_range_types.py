@@ -99,3 +99,27 @@ def test_parse_iso_duration(duration, result):
         assert dur.hours == result[4]
         assert dur.minutes == result[5]
         assert dur.seconds == result[6]
+
+
+def test_empty_date_range():
+    """Test empty date range."""
+    test = range_types.ISODateRange("/")
+    assert test.lower_bound == test.upper_bound
+
+
+def test_empty_datetime_range():
+    """Test empty datetime range."""
+    test = range_types.ISODateTimeRange("/")
+    assert test.lower_bound == test.upper_bound
+
+
+def test_double_duration_date():
+    """Test range composed of two date durations."""
+    test = range_types.ISODateRange("P1D/P1D")
+    assert (test.upper_bound - test.lower_bound) == datetime.timedelta(days=2)
+
+
+def test_double_duration_datetime():
+    """Test range composed of two datetime durations."""
+    test = range_types.ISODateTimeRange("PT1H/PT1H")
+    assert (test.upper_bound - test.lower_bound) == datetime.timedelta(hours=2)
