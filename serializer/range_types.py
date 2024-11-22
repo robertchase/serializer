@@ -75,7 +75,8 @@ class ISODateTimeRange(Range):
         24-01-01T12:00:00Z--PT60M
 
     A single string arg with two separated ISO range values can also be
-    supplied, which will indicate durations before and after the current time.
+    supplied, which will indicate durations before and after the current time
+    (UTC).
 
     The following indicates a range of one hour before the current time and
     fifteen minutes after the current time:
@@ -83,7 +84,7 @@ class ISODateTimeRange(Range):
         PT1H/PT15M
 
     If a single string arg is missing one or both separated values, then the
-    current time is assumed for the missing value(s).
+    current time (UTC) is used for the missing value(s).
 
     The following indicates the ten previous hours (a range from 10 hours ago
     until now):
@@ -144,7 +145,7 @@ def parse_iso_range(value: str, date_parser, duration_parser):
         raise ValueError("range separator not found")
 
     part1, part2 = parts
-    now = datetime.datetime.now().isoformat()
+    now = datetime.datetime.now(datetime.UTC).isoformat()
     if not part1:
         part1 = now
     if not part2:
